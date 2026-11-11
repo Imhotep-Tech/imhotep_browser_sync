@@ -6,9 +6,9 @@
   <title>Imhotep Browser Sync</title>
   <link rel="stylesheet" href="./popup.css">
 </head>
-<body class="bg-[#070a13] text-slate-100 dark:bg-[#070a13] dark:text-slate-100 antialiased selection:bg-amber-500/30 selection:text-amber-200">
-  <!-- Outer Extension Container (Fixed 400px width for desktop popup, 100% on mobile) -->
-  <div id="app-container" class="w-full sm:w-[400px] min-h-[580px] max-h-[600px] flex flex-col mx-auto overflow-hidden relative shadow-2xl border-x border-slate-800/40">
+<body class="bg-[#070a13] text-slate-100 dark:bg-[#070a13] dark:text-slate-100 antialiased selection:bg-amber-500/30 selection:text-amber-200 w-[400px] h-[600px] max-h-[600px] overflow-hidden m-0 p-0">
+  <!-- Outer Extension Container (Strict fixed 400x600 size to prevent window resize between tabs) -->
+  <div id="app-container" class="w-[400px] h-[600px] min-h-[600px] max-h-[600px] flex flex-col mx-auto overflow-hidden relative shadow-2xl border-x border-slate-800/40">
 
     <!-- Top Glow Accent Line (Egyptian Telemetry Cyan/Gold Gradient) -->
     <div class="h-1 w-full bg-gradient-to-r from-cyan-500 via-amber-400 to-amber-600"></div>
@@ -102,8 +102,8 @@
       </button>
     </nav>
 
-    <!-- Main Scrollable Views Content -->
-    <main class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+    <!-- Main Scrollable Views Content (min-h-0 locks flex child inside 600px viewport) -->
+    <main class="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
 
       <!-- Onboarding / Welcome Banner (Dismissible, 100% P2P highlight) -->
       <div id="onboarding-banner" class="glass-panel p-3.5 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/20 via-slate-900/60 to-cyan-950/20 relative">

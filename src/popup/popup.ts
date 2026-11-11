@@ -331,6 +331,12 @@ function switchTab(tab: PopupLocalState['activeTab']) {
   if (targetSection) {
     targetSection.classList.remove('hidden');
   }
+
+  // Reset scroll to top on tab change to prevent jumpiness
+  const mainEl = document.querySelector('main');
+  if (mainEl) {
+    mainEl.scrollTop = 0;
+  }
 }
 
 function updateHeaderStatusBadge() {
