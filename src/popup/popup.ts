@@ -40,6 +40,7 @@ interface PopupLocalState {
   currentFingerprint: string;
   currentTicket: string;
   generatedAnswerTicket: string;
+  pairedPeer: { id: string; name: string; lastSeen: number } | null;
   syncState: SyncState;
   installedExtensions: ExtensionItem[];
   remoteExtensions: ExtensionItem[];
@@ -169,6 +170,7 @@ const state: PopupLocalState = {
   currentFingerprint: '',
   currentTicket: '',
   generatedAnswerTicket: '',
+  pairedPeer: null,
   syncState: { ...DEFAULT_SYNC_STATE },
   installedExtensions: [...MOCK_INSTALLED_EXTENSIONS],
   remoteExtensions: [...MOCK_REMOTE_EXTENSIONS],
@@ -402,10 +404,22 @@ function getOrCreateP2PClient(): WebRTCP2PClient {
       },
       onPeerConnected: (peer) => {
         console.log('[Popup:P2P] Peer connected:', peer);
+        const paired = { id: peer.deviceId, name: peer.deviceName, lastSeen: Date.now() };
+        state.pairedPeer = paired;
         state.syncState.p2pConnectedPeers = 1;
+        state.syncState.status = 'connected';
         renderP2PRoster();
         updateHeaderStatusBadge();
         showToast(`Connected to ${peer.deviceName}!`);
+
+        // Persist paired peer to local storage
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({
+            imhotep_p2p_paired_peer: paired,
+            imhotep_p2p_connected: true,
+          });
+        }
+        sendRuntimeMessage({ type: 'SET_PEER_CONNECTED', payload: paired });
 
         // Send installed extensions immediately to remote peer
         if (popupP2PClient && state.installedExtensions.length > 0) {
@@ -431,6 +445,8 @@ function getOrCreateP2PClient(): WebRTCP2PClient {
       },
       onHistoryBatchReceived: async (items) => {
         console.log('[Popup:P2P] Received history batch:', items.length);
+        const peerName = state.pairedPeer?.name || 'Remote Peer';
+        const peerId = state.pairedPeer?.id || 'remote-peer';
         for (const item of items) {
           if (typeof chrome !== 'undefined' && chrome.history && chrome.history.addUrl) {
             try {
@@ -444,12 +460,19 @@ function getOrCreateP2PClient(): WebRTCP2PClient {
             url: item.url,
             title: item.title || item.url,
             visitTime: item.lastVisitTime || Date.now(),
-            deviceId: 'remote-peer',
-            deviceName: 'Remote Browser',
+            deviceId: peerId,
+            deviceName: peerName,
           });
         }
         renderHistoryViewer();
         showToast(`Synced ${items.length} visits from peer!`);
+
+        // Persist synced history
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({
+            imhotep_synced_history: state.recentHistory.slice(0, 500),
+          });
+        }
       },
       onExtensionBatchReceived: async (extensions) => {
         console.log('[Popup:P2P] Received extension batch:', extensions.length);
@@ -464,6 +487,14 @@ function getOrCreateP2PClient(): WebRTCP2PClient {
         state.remoteExtensions = mapped;
         renderExtensionsGallery();
         showToast(`Discovered ${mapped.length} extensions from peer!`);
+
+        // Persist remote extensions
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({
+            imhotep_p2p_remote_extensions: mapped,
+          });
+        }
+        sendRuntimeMessage({ type: 'SET_REMOTE_EXTENSIONS', payload: mapped });
       },
     });
   }
@@ -561,7 +592,8 @@ function renderP2PRoster() {
     </div>
   `;
 
-  if (state.syncState.p2pConnectedPeers > 0) {
+  if (state.syncState.p2pConnectedPeers > 0 || state.pairedPeer) {
+    const peerName = state.pairedPeer?.name || 'Remote Peer Device';
     const peerItem = document.createElement('div');
     peerItem.className =
       'p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-between text-xs';
@@ -570,15 +602,13 @@ function renderP2PRoster() {
         <span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse-glow"></span>
         <div>
           <div class="font-semibold text-slate-900 dark:text-slate-200 flex items-center space-x-1">
-            <span>Android Kiwi Browser</span>
-            <span class="text-[9px] px-1 rounded bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 font-mono font-semibold">Mobile</span>
+            <span>${peerName}</span>
+            <span class="text-[9px] px-1 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 font-mono font-semibold">Paired</span>
           </div>
-          <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">DataChannel Connected • 18ms</div>
+          <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">P2P Mesh Active • Syncing</div>
         </div>
       </div>
-      <button class="btn-tactile px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[10px]">
-        Ping
-      </button>
+      <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 font-mono">Connected</span>
     `;
     peersListEl.appendChild(peerItem);
   }
@@ -1166,11 +1196,39 @@ function setupEventListeners() {
 async function init() {
   applyTheme(state.theme);
 
+  // Rehydrate paired peer, remote extensions, and synced history from chrome.storage.local
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    try {
+      const stored = await chrome.storage.local.get([
+        'imhotep_p2p_paired_peer',
+        'imhotep_p2p_remote_extensions',
+        'imhotep_synced_history',
+      ]);
+      if (stored.imhotep_p2p_paired_peer) {
+        state.pairedPeer = stored.imhotep_p2p_paired_peer;
+        state.syncState.p2pConnectedPeers = 1;
+        state.syncState.status = 'connected';
+      }
+      if (Array.isArray(stored.imhotep_p2p_remote_extensions) && stored.imhotep_p2p_remote_extensions.length > 0) {
+        state.remoteExtensions = stored.imhotep_p2p_remote_extensions;
+      }
+      if (Array.isArray(stored.imhotep_synced_history) && stored.imhotep_synced_history.length > 0) {
+        state.recentHistory = [...stored.imhotep_synced_history, ...state.recentHistory];
+      }
+    } catch (e) {
+      console.warn('Could not rehydrate local storage:', e);
+    }
+  }
+
   // Fetch initial status from background worker
   try {
     const statusRes = await sendRuntimeMessage<SyncState>({ type: 'GET_STATUS' });
     if (statusRes.success && statusRes.data) {
       state.syncState = { ...state.syncState, ...statusRes.data };
+      if (state.pairedPeer) {
+        state.syncState.p2pConnectedPeers = 1;
+        state.syncState.status = 'connected';
+      }
     }
 
     const extRes = await sendRuntimeMessage<ExtensionItem[]>({ type: 'GET_INSTALLED_EXTENSIONS' });
@@ -1181,7 +1239,7 @@ async function init() {
     const remoteExtRes = await sendRuntimeMessage<ExtensionItem[]>({
       type: 'GET_REMOTE_EXTENSIONS',
     });
-    if (remoteExtRes.success && remoteExtRes.data) {
+    if (remoteExtRes.success && remoteExtRes.data && remoteExtRes.data.length > 0) {
       state.remoteExtensions = remoteExtRes.data;
     }
 
@@ -1190,7 +1248,12 @@ async function init() {
       payload: { limit: state.historyLimit },
     });
     if (histRes.success && histRes.data) {
-      state.recentHistory = histRes.data;
+      const existingUrls = new Set(state.recentHistory.map((h) => h.url));
+      for (const item of histRes.data) {
+        if (!existingUrls.has(item.url)) {
+          state.recentHistory.push(item);
+        }
+      }
     }
   } catch (err) {
     console.warn('Init error, using defaults:', err);

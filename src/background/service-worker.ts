@@ -47,6 +47,7 @@ const STORAGE_KEY_BUFFER = 'imhotep_history_buffer';
 const STORAGE_KEY_STATS = 'imhotep_sync_stats';
 const STORAGE_KEY_SALT = 'imhotep_account_salt';
 const STORAGE_KEY_P2P_EXTENSIONS = 'imhotep_p2p_remote_extensions';
+const STORAGE_KEY_PAIRED_PEER = 'imhotep_p2p_paired_peer';
 
 // ============================================================================
 // Service Worker In-Memory State (Rehydrated from chrome.storage.local)
@@ -91,6 +92,7 @@ async function initializeState(): Promise<void> {
       STORAGE_KEY_STATS,
       STORAGE_KEY_SALT,
       STORAGE_KEY_P2P_EXTENSIONS,
+      STORAGE_KEY_PAIRED_PEER,
     ]);
 
     // Initialize or rehydrate Device ID
@@ -147,6 +149,12 @@ async function initializeState(): Promise<void> {
     // Rehydrate account salt
     if (data[STORAGE_KEY_SALT]) {
       activeSaltBase64 = data[STORAGE_KEY_SALT];
+    }
+
+    // Rehydrate paired peer state
+    if (data[STORAGE_KEY_PAIRED_PEER]) {
+      p2pConnectedPeers = 1;
+      syncStatus = 'connected';
     }
 
     // Initialize P2P client instance
@@ -507,6 +515,25 @@ async function handleMessage(
         hasMasterKey: activeCryptoKey !== null,
       };
       return { success: true, data: state };
+    }
+
+    case 'SET_PEER_CONNECTED': {
+      const peer = message.payload;
+      if (peer) {
+        p2pConnectedPeers = 1;
+        syncStatus = 'connected';
+        await chrome.storage.local.set({ [STORAGE_KEY_PAIRED_PEER]: peer });
+      }
+      return { success: true };
+    }
+
+    case 'SET_REMOTE_EXTENSIONS': {
+      const exts = message.payload as ExtensionItem[];
+      if (Array.isArray(exts)) {
+        p2pRemoteExtensions = exts;
+        await chrome.storage.local.set({ [STORAGE_KEY_P2P_EXTENSIONS]: exts });
+      }
+      return { success: true };
     }
 
     case 'SET_DEVICE_NAME': {
