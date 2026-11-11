@@ -9,7 +9,9 @@
     "management",
     "alarms",
     "notifications",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "clipboardRead",
+    "clipboardWrite"
   ],
   "background": {
     "service_worker": "service-worker.js",

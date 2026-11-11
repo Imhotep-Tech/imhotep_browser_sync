@@ -69,6 +69,10 @@ export class WebRTCP2PClient {
     return this.state;
   }
 
+  public isConnected(): boolean {
+    return this.dataChannel !== null && this.dataChannel.readyState === 'open';
+  }
+
   public getRemotePeer(): PeerDeviceMetadata | null {
     return this.remotePeer;
   }
@@ -323,7 +327,10 @@ export class WebRTCP2PClient {
     encrypt = false
   ): Promise<void> {
     if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
-      throw new Error('WebRTC DataChannel is not open');
+      console.warn(
+        `[WebRTC] DataChannel not open (readyState: ${this.dataChannel?.readyState || 'none'}). Envelope '${type}' skipped.`
+      );
+      return;
     }
 
     let payloadToSend: any = payload;
@@ -522,8 +529,12 @@ export class WebRTCP2PClient {
   /**
    * Transmits history items in zero-knowledge micro-batches over the P2P DataChannel.
    */
-  public async syncHistoryBatch(items: HistoryItemPayload[], batchSize = 50): Promise<void> {
-    if (!items || items.length === 0) return;
+  public async syncHistoryBatch(items: HistoryItemPayload[], batchSize = 50): Promise<boolean> {
+    if (!this.isConnected()) {
+      console.warn('[WebRTC] DataChannel not open; cannot send history batch');
+      return false;
+    }
+    if (!items || items.length === 0) return true;
 
     const totalBatches = Math.ceil(items.length / batchSize);
     for (let b = 0; b < totalBatches; b++) {
@@ -547,13 +558,18 @@ export class WebRTCP2PClient {
 
       await this.sendEnvelope('HISTORY_SYNC_BATCH', microBatch);
     }
+    return true;
   }
 
   /**
    * Transmits installed extensions list in zero-knowledge format over P2P DataChannel.
    */
-  public async syncExtensions(extensions: ExtensionItemPayload[]): Promise<void> {
-    if (!extensions || extensions.length === 0) return;
+  public async syncExtensions(extensions: ExtensionItemPayload[]): Promise<boolean> {
+    if (!this.isConnected()) {
+      console.warn('[WebRTC] DataChannel not open; cannot send extensions list');
+      return false;
+    }
+    if (!extensions || extensions.length === 0) return true;
 
     const batchId = `ext_${Date.now()}`;
     let dataPayload: any = extensions;
@@ -572,6 +588,7 @@ export class WebRTCP2PClient {
     };
 
     await this.sendEnvelope('EXTENSION_SYNC_BATCH', microBatch);
+    return true;
   }
 
   private handleError(error: Error): void {

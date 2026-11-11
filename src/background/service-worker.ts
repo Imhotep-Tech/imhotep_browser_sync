@@ -169,7 +169,7 @@ async function initializeState(): Promise<void> {
       `[Imhotep:SW] 100% P2P Hub initialized: Device "${deviceName}" (${deviceId}) on ${deviceType}`
     );
   } catch (error) {
-    console.error('[Imhotep:SW] Initialization error:', error);
+    console.warn('[Imhotep:SW] Initialization notice:', error);
   }
 }
 
@@ -288,7 +288,7 @@ async function handleHistoryVisited(result: chrome.history.HistoryItem): Promise
     clearTimeout(flushDebounceTimer);
   }
   flushDebounceTimer = setTimeout(() => {
-    flushHistoryBuffer().catch((e) => console.error(e));
+    flushHistoryBuffer().catch((e) => console.warn('[Imhotep:SW] Buffer flush notice:', e));
   }, BATCH_FLUSH_INTERVAL_MS);
 }
 
@@ -324,7 +324,7 @@ async function flushHistoryBuffer(): Promise<void> {
 
     await persistBuffer();
   } catch (error) {
-    console.error('[Imhotep:SW] Error during buffer flush:', error);
+    console.warn('[Imhotep:SW] Buffer flush notice:', error);
     lastError = error instanceof Error ? error.message : String(error);
     syncStatus = 'error';
   }
@@ -382,7 +382,7 @@ export async function inspectExtensions(): Promise<ExtensionItem[]> {
 
     return items;
   } catch (error) {
-    console.error('[Imhotep:SW] Failed to inspect installed extensions:', error);
+    console.warn('[Imhotep:SW] Failed to inspect installed extensions:', error);
     return [];
   }
 }
@@ -409,7 +409,7 @@ export async function syncExtensionsNow(): Promise<{ count: number; error?: stri
 
     return { count: extensions.length };
   } catch (error) {
-    console.error('[Imhotep:SW] Failed to sync extensions:', error);
+    console.warn('[Imhotep:SW] Failed to sync extensions:', error);
     return { count: 0, error: error instanceof Error ? error.message : String(error) };
   }
 }
@@ -442,7 +442,7 @@ function initP2PClient(): void {
       console.log(`[Imhotep:P2P] Peer connected: ${peer.deviceName} (${peer.deviceId})`);
       p2pConnectedPeers = 1;
       syncStatus = 'connected';
-      syncExtensionsNow().catch((e) => console.error(e));
+      syncExtensionsNow().catch((e) => console.warn(e));
     },
     onPeerDisconnected: () => {
       console.log('[Imhotep:P2P] Peer disconnected');
@@ -478,7 +478,7 @@ function initP2PClient(): void {
       chrome.storage.local.set({ [STORAGE_KEY_P2P_EXTENSIONS]: mapped });
     },
     onError: (err) => {
-      console.error('[Imhotep:P2P] Error:', err);
+      console.warn('[Imhotep:P2P] Notice:', err);
       lastError = err.message;
     },
   });

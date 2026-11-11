@@ -460,7 +460,7 @@ function getOrCreateP2PClient(): WebRTCP2PClient {
         sendRuntimeMessage({ type: 'SET_PAIRED_PEERS', payload: state.pairedPeers });
 
         // 1. Send installed extensions to remote peer
-        if (popupP2PClient && state.installedExtensions.length > 0) {
+        if (popupP2PClient && popupP2PClient.isConnected() && state.installedExtensions.length > 0) {
           const payload = state.installedExtensions.map((ext) => ({
             id: ext.id,
             name: ext.name,
@@ -468,11 +468,11 @@ function getOrCreateP2PClient(): WebRTCP2PClient {
             description: ext.description,
             enabled: ext.enabled,
           }));
-          popupP2PClient.syncExtensions(payload).catch((e) => console.error(e));
+          popupP2PClient.syncExtensions(payload).catch((e) => console.warn('[Popup:P2P] Extensions notice:', e));
         }
 
         // 2. Fetch and send full native browser history (up to 150 items)
-        if (popupP2PClient && typeof chrome !== 'undefined' && chrome.history && chrome.history.search) {
+        if (popupP2PClient && popupP2PClient.isConnected() && typeof chrome !== 'undefined' && chrome.history && chrome.history.search) {
           try {
             const nativeVisits = await chrome.history.search({ text: '', maxResults: 150 });
             const histPayload = nativeVisits
@@ -612,7 +612,7 @@ async function refreshPairingCredentials() {
       });
     }
   } catch (err) {
-    console.error('Failed to generate pairing credentials:', err);
+    console.warn('Notice: Failed to generate pairing credentials:', err);
     showToast('Failed to generate QR pairing');
   } finally {
     qrLoading?.classList.add('hidden');
@@ -1121,18 +1121,24 @@ function setupEventListeners() {
         if (answerBox) answerBox.classList.add('hidden');
       }
     } catch (err: any) {
-      console.error('Pairing error:', err);
-      showToast('Pairing error: ' + (err?.message || err));
+      console.warn('Pairing notice:', err?.message || err);
+      showToast('Pairing notice: ' + (err?.message || err));
     }
   });
 
   // P2P Sync Now
   document.getElementById('btn-p2p-sync-now')?.addEventListener('click', async () => {
-    showToast('Syncing native history & extensions over P2P...');
     await sendRuntimeMessage({ type: 'TRIGGER_FLUSH' });
 
+    if (!popupP2PClient || !popupP2PClient.isConnected()) {
+      showToast('⚠️ No active peer connected. Connect a peer to sync visits.');
+      return;
+    }
+
+    showToast('Syncing native history & extensions over P2P...');
+
     // Send native history to remote peer if connected
-    if (popupP2PClient && typeof chrome !== 'undefined' && chrome.history && chrome.history.search) {
+    if (typeof chrome !== 'undefined' && chrome.history && chrome.history.search) {
       try {
         const nativeVisits = await chrome.history.search({ text: '', maxResults: 150 });
         const histPayload = nativeVisits
@@ -1144,16 +1150,18 @@ function setupEventListeners() {
             visitCount: h.visitCount || 1,
           }));
         if (histPayload.length > 0) {
-          await popupP2PClient.syncHistoryBatch(histPayload);
+          const ok = await popupP2PClient.syncHistoryBatch(histPayload);
+          if (ok) {
+            showToast(`Synced ${histPayload.length} history items to peer!`);
+          }
         }
-      } catch (e) {
-        console.warn('Sync history failed:', e);
+      } catch (e: any) {
+        console.warn('Sync history notice:', e?.message || e);
       }
     }
 
     state.syncState.bufferedCount = 0;
     updateHeaderStatusBadge();
-    showToast('P2P sync complete! All browser visits updated.');
   });
 
   // Extensions Filter Chips
