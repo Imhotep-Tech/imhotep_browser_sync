@@ -14,7 +14,12 @@ import {
   RuntimeMessage,
   RuntimeResponse,
 } from '../types/sync';
-import { renderPairingQRCodeToCanvas } from '../p2p/qr';
+import {
+  renderPairingQRCodeToCanvas,
+  compressSignalTicket,
+  decompressSignalTicket,
+} from '../p2p/qr';
+import { PairingSignalTicket } from '../types/p2p';
 import {
   generateMnemonic,
   derivePairingDisplayCode,
@@ -32,6 +37,8 @@ interface PopupLocalState {
   theme: 'dark' | 'light';
   currentMnemonic: string;
   currentFingerprint: string;
+  currentTicket: string;
+  generatedAnswerTicket: string;
   syncState: SyncState;
   installedExtensions: ExtensionItem[];
   remoteExtensions: ExtensionItem[];
@@ -159,6 +166,8 @@ const state: PopupLocalState = {
   theme: (localStorage.getItem('imhotep_theme') as 'dark' | 'light') || 'dark',
   currentMnemonic: '',
   currentFingerprint: '',
+  currentTicket: '',
+  generatedAnswerTicket: '',
   syncState: { ...DEFAULT_SYNC_STATE },
   installedExtensions: [...MOCK_INSTALLED_EXTENSIONS],
   remoteExtensions: [...MOCK_REMOTE_EXTENSIONS],
@@ -404,9 +413,27 @@ async function refreshPairingCredentials() {
       });
     }
 
+    // Request actual WebRTC Offer Ticket from background service worker
+    let qrPayload = mnemonic;
+    try {
+      const pairingRes = await sendRuntimeMessage<PairingSignalTicket>({
+        type: 'P2P_START_PAIRING',
+      });
+
+      if (pairingRes && pairingRes.success && pairingRes.data) {
+        const ticketStr = await compressSignalTicket(pairingRes.data);
+        state.currentTicket = ticketStr;
+        qrPayload = ticketStr;
+      } else {
+        state.currentTicket = mnemonic;
+      }
+    } catch {
+      state.currentTicket = mnemonic;
+    }
+
     // Render QR Code onto canvas
     if (qrCanvas) {
-      await renderPairingQRCodeToCanvas(qrCanvas, mnemonic, {
+      await renderPairingQRCodeToCanvas(qrCanvas, qrPayload, {
         width: 176,
         margin: 1,
         darkColor: '#070A13',
@@ -772,6 +799,42 @@ function setupEventListeners() {
     sharePanel?.classList.add('hidden');
   });
 
+  // Copy P2P Pairing Ticket (SDP Offer)
+  document.getElementById('btn-copy-ticket')?.addEventListener('click', async () => {
+    if (!state.currentTicket) {
+      showToast('Generating ticket...');
+      await refreshPairingCredentials();
+    }
+    if (!state.currentTicket) return;
+    try {
+      await navigator.clipboard.writeText(state.currentTicket);
+      const label = document.getElementById('copy-ticket-label');
+      if (label) label.textContent = 'Copied to Clipboard!';
+      showToast('Pairing ticket copied! Paste into peer browser');
+      setTimeout(() => {
+        if (label) label.textContent = 'Copy Pairing Ticket (P2P Ticket)';
+      }, 2000);
+    } catch {
+      showToast('Failed to copy ticket');
+    }
+  });
+
+  // Copy Answer Ticket
+  document.getElementById('btn-copy-answer-ticket')?.addEventListener('click', async () => {
+    if (!state.generatedAnswerTicket) return;
+    try {
+      await navigator.clipboard.writeText(state.generatedAnswerTicket);
+      const label = document.getElementById('copy-answer-label');
+      if (label) label.textContent = 'Copied to Clipboard!';
+      showToast('Answer ticket copied! Paste into first browser');
+      setTimeout(() => {
+        if (label) label.textContent = 'Copy Answer Ticket';
+      }, 2000);
+    } catch {
+      showToast('Failed to copy answer');
+    }
+  });
+
   // Copy 12-Word Mnemonic Phrase
   document.getElementById('btn-copy-mnemonic')?.addEventListener('click', async () => {
     if (!state.currentMnemonic) return;
@@ -794,31 +857,73 @@ function setupEventListeners() {
     showToast('New ephemeral pairing credentials ready');
   });
 
-  // Connect to Peer action
+  // Connect to Peer action (Handles both Offer Ticket & Answer Ticket)
   document.getElementById('btn-connect-peer')?.addEventListener('click', async () => {
     const input = document.getElementById('input-peer-signal') as HTMLTextAreaElement;
     const value = input?.value?.trim();
 
     if (!value) {
-      showToast('Please enter mnemonic words or pairing ticket');
+      showToast('Please enter pairing ticket or mnemonic');
       return;
     }
 
-    showToast('Pairing with peer...');
-    const isValidWords = await validateMnemonic(value);
-    const res = await sendRuntimeMessage({
-      type: 'P2P_CONNECT_MNEMONIC',
-      payload: { mnemonic: value, isMnemonic: isValidWords },
-    });
+    try {
+      let ticket: PairingSignalTicket;
 
-    if (res.success) {
-      state.syncState.p2pConnectedPeers += 1;
-      renderP2PRoster();
-      updateHeaderStatusBadge();
-      showToast('P2P DataChannel established!');
-      input.value = '';
-    } else {
-      showToast(res.error || 'Pairing failed. Check phrase.');
+      if (value.startsWith('IMH1:') || value.startsWith('IMH0:') || value.startsWith('{')) {
+        ticket = await decompressSignalTicket(value);
+      } else {
+        const isValid = await validateMnemonic(value);
+        if (isValid) {
+          showToast('Pairing requires ticket string. Please copy Pairing Ticket from other browser.');
+          return;
+        }
+        showToast('Invalid ticket payload. Make sure to copy the full ticket.');
+        return;
+      }
+
+      showToast(ticket.type === 'offer' ? 'Accepting offer & creating answer...' : 'Connecting to peer...');
+
+      const res = await sendRuntimeMessage<PairingSignalTicket>({
+        type: 'P2P_CONNECT_MNEMONIC',
+        payload: { ticket },
+      });
+
+      if (res.success) {
+        if (ticket.type === 'offer' && res.data) {
+          // Device B received Offer -> Generated Answer Ticket!
+          const answerStr = await compressSignalTicket(res.data);
+          state.generatedAnswerTicket = answerStr;
+
+          // Automatically copy answer to clipboard for seamless workflow
+          try {
+            await navigator.clipboard.writeText(answerStr);
+          } catch {
+            // ignore
+          }
+
+          const answerBox = document.getElementById('answer-ticket-box');
+          const answerInput = document.getElementById('output-answer-ticket') as HTMLTextAreaElement;
+          if (answerBox && answerInput) {
+            answerInput.value = answerStr;
+            answerBox.classList.remove('hidden');
+          }
+          showToast('Answer copied! Paste into first browser to finish pairing.');
+        } else {
+          // Device A received Answer -> Connected!
+          state.syncState.p2pConnectedPeers += 1;
+          renderP2PRoster();
+          updateHeaderStatusBadge();
+          showToast('🎉 Direct P2P DataChannel established!');
+          input.value = '';
+          const answerBox = document.getElementById('answer-ticket-box');
+          if (answerBox) answerBox.classList.add('hidden');
+        }
+      } else {
+        showToast(res.error || 'Pairing failed');
+      }
+    } catch (err: any) {
+      showToast('Pairing error: ' + (err?.message || err));
     }
   });
 

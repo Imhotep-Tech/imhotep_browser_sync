@@ -183,6 +183,13 @@
                 <span>Fingerprint:</span>
                 <span id="p2p-pairing-fingerprint" class="font-bold text-amber-700 dark:text-amber-400 tracking-wider">IMH-9X4-K28</span>
               </div>
+              <button id="btn-copy-ticket" class="btn-tactile mt-2 w-full py-1.5 px-3 rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-slate-850 text-[11px] font-mono font-semibold flex items-center justify-center space-x-1.5 shadow-sm transition-colors">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                <span id="copy-ticket-label">Copy Pairing Ticket (P2P Ticket)</span>
+              </button>
             </div>
 
             <!-- 12-Word BIP-39 Mnemonic Phrase Grid -->
@@ -232,6 +239,25 @@
               </button>
               <button id="btn-connect-peer" class="btn-tactile flex-1 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 dark:hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center justify-center space-x-1 shadow-md shadow-amber-500/20">
                 <span>Pair & Connect</span>
+              </button>
+            </div>
+
+            <!-- Generated Answer Ticket Container -->
+            <div id="answer-ticket-box" class="hidden p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800/60 space-y-2">
+              <div class="flex items-center justify-between text-[11px] font-bold text-emerald-900 dark:text-emerald-300">
+                <span>Answer Ticket Generated!</span>
+                <span class="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 font-normal">Step 2 of 2</span>
+              </div>
+              <p class="text-[10px] text-slate-700 dark:text-slate-300 leading-tight">
+                Paste this Answer Ticket into the first browser to complete the peer-to-peer connection:
+              </p>
+              <textarea id="output-answer-ticket" readonly rows="2" class="w-full text-[10px] font-mono p-1.5 rounded bg-white dark:bg-slate-950/90 border border-emerald-300 dark:border-emerald-700/60 text-slate-800 dark:text-slate-200 select-all"></textarea>
+              <button id="btn-copy-answer-ticket" class="btn-tactile w-full py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] flex items-center justify-center space-x-1 shadow-sm">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                <span id="copy-answer-label">Copy Answer Ticket</span>
               </button>
             </div>
           </div>
