@@ -314,11 +314,11 @@ function switchTab(tab: PopupLocalState['activeTab']) {
   document.querySelectorAll<HTMLButtonElement>('.tab-btn').forEach((btn) => {
     const isTarget = btn.getAttribute('data-tab') === tab;
     if (isTarget) {
-      btn.classList.add('border-amber-400', 'text-amber-400');
-      btn.classList.remove('border-transparent', 'text-slate-400');
+      btn.classList.add('border-amber-600', 'text-amber-600', 'dark:border-amber-400', 'dark:text-amber-400', 'font-semibold');
+      btn.classList.remove('border-transparent', 'text-slate-500', 'dark:text-slate-400');
     } else {
-      btn.classList.remove('border-amber-400', 'text-amber-400');
-      btn.classList.add('border-transparent', 'text-slate-400');
+      btn.classList.remove('border-amber-600', 'text-amber-600', 'dark:border-amber-400', 'dark:text-amber-400', 'font-semibold');
+      btn.classList.add('border-transparent', 'text-slate-500', 'dark:text-slate-400');
     }
   });
 
@@ -349,8 +349,8 @@ function updateHeaderStatusBadge() {
 
   text.textContent = state.syncState.p2pConnectedPeers > 0 ? 'P2P Active' : 'P2P Ready';
   badge.className =
-    'flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-950/60 text-emerald-400 border border-emerald-800/60';
-  dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-glow';
+    'flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/60';
+  dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse-glow';
   iconP2p?.classList.remove('hidden');
 
   // Footer buffer count
@@ -390,10 +390,10 @@ async function refreshPairingCredentials() {
       words.forEach((word, idx) => {
         const item = document.createElement('div');
         item.className =
-          'flex items-center space-x-1.5 bg-slate-900/90 px-2 py-1.5 rounded border border-slate-800/80 hover:border-amber-500/40 transition-colors';
+          'flex items-center space-x-1.5 bg-white dark:bg-slate-900/90 px-2 py-1.5 rounded border border-slate-200/90 dark:border-slate-800/80 hover:border-amber-500/60 shadow-sm transition-colors';
         item.innerHTML = `
-          <span class="mnemonic-badge text-[9px] text-amber-500/80 font-mono font-semibold">${idx + 1}.</span>
-          <span class="text-slate-200 font-mono text-[11px] font-medium tracking-tight select-all">${word}</span>
+          <span class="mnemonic-badge text-[9px] text-amber-700 dark:text-amber-500/80 font-mono font-bold">${idx + 1}.</span>
+          <span class="text-slate-900 dark:text-slate-200 font-mono text-[11px] font-medium tracking-tight select-all">${word}</span>
         `;
         mnemonicGrid.appendChild(item);
       });
@@ -437,34 +437,34 @@ function renderP2PRoster() {
 
   // Render peer items
   peersListEl.innerHTML = `
-    <div class="p-2 rounded-lg bg-slate-950/40 border border-slate-800/80 flex items-center justify-between text-xs">
+    <div class="p-2 rounded-lg bg-slate-50 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-xs">
       <div class="flex items-center space-x-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
         <div>
-          <div class="font-semibold text-slate-200">This Device (Local)</div>
-          <div class="text-[10px] text-slate-400">${state.syncState.deviceName}</div>
+          <div class="font-semibold text-slate-900 dark:text-slate-200">This Device (Local)</div>
+          <div class="text-[10px] text-slate-500 dark:text-slate-400">${state.syncState.deviceName}</div>
         </div>
       </div>
-      <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">Active</span>
+      <span class="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">Active</span>
     </div>
   `;
 
   if (state.syncState.p2pConnectedPeers > 0) {
     const peerItem = document.createElement('div');
     peerItem.className =
-      'p-2 rounded-lg bg-emerald-950/20 border border-emerald-800/40 flex items-center justify-between text-xs';
+      'p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-between text-xs';
     peerItem.innerHTML = `
       <div class="flex items-center space-x-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-glow"></span>
+        <span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse-glow"></span>
         <div>
-          <div class="font-semibold text-slate-200 flex items-center space-x-1">
+          <div class="font-semibold text-slate-900 dark:text-slate-200 flex items-center space-x-1">
             <span>Android Kiwi Browser</span>
-            <span class="text-[9px] px-1 rounded bg-amber-500/20 text-amber-300 font-mono">Mobile</span>
+            <span class="text-[9px] px-1 rounded bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 font-mono font-semibold">Mobile</span>
           </div>
-          <div class="text-[10px] text-slate-400 font-mono">DataChannel Connected • 18ms</div>
+          <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">DataChannel Connected • 18ms</div>
         </div>
       </div>
-      <button class="btn-tactile px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">
+      <button class="btn-tactile px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[10px]">
         Ping
       </button>
     `;
@@ -543,7 +543,7 @@ function renderExtensionsGallery() {
   filtered.forEach((ext) => {
     const card = document.createElement('div');
     card.className =
-      'glass-panel p-3 rounded-xl border border-slate-800/80 hover:border-slate-700 transition-all space-y-2';
+      'glass-panel p-3 rounded-xl border border-slate-200/90 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all space-y-2';
 
     const monogram = getMonogram(ext.name);
 
@@ -553,17 +553,17 @@ function renderExtensionsGallery() {
           <!-- Extension Monogram Icon -->
           <div class="w-8 h-8 rounded-lg ${
             ext.isRemote
-              ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 text-cyan-300 border border-cyan-500/30'
-              : 'bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/30'
-          } flex items-center justify-center font-bold text-xs font-mono">
+              ? 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-gradient-to-br dark:from-cyan-500/20 dark:to-blue-500/20 dark:text-cyan-300 dark:border-cyan-500/30'
+              : 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-gradient-to-br dark:from-amber-500/20 dark:to-orange-500/20 dark:text-amber-300 dark:border-amber-500/30'
+          } flex items-center justify-center font-bold text-xs font-mono shadow-sm">
             ${monogram}
           </div>
           <div>
-            <div class="text-xs font-semibold text-slate-100 flex items-center space-x-1.5">
+            <div class="text-xs font-semibold text-slate-900 dark:text-slate-100 flex items-center space-x-1.5">
               <span>${ext.name}</span>
               <span class="text-[9px] text-slate-500 font-mono">v${ext.version}</span>
             </div>
-            <div class="text-[10px] text-slate-400 font-mono truncate max-w-[210px]" title="${ext.id}">
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[210px]" title="${ext.id}">
               ${ext.id}
             </div>
           </div>
@@ -583,10 +583,10 @@ function renderExtensionsGallery() {
                 </a>`
               : `<span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-mono whitespace-nowrap ${
                   ext.enabled
-                    ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60'
-                    : 'bg-slate-800 text-slate-400'
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800/60'
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                 }">
-                  <span class="w-1.5 h-1.5 rounded-full ${ext.enabled ? 'bg-emerald-400' : 'bg-slate-500'}"></span>
+                  <span class="w-1.5 h-1.5 rounded-full ${ext.enabled ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-slate-400'}"></span>
                   <span>${ext.enabled ? 'Installed' : 'Disabled'}</span>
                 </span>`
           }
@@ -594,7 +594,7 @@ function renderExtensionsGallery() {
       </div>
       ${
         ext.description
-          ? `<p class="text-[11px] text-slate-400 leading-snug line-clamp-2">${ext.description}</p>`
+          ? `<p class="text-[11px] text-slate-600 dark:text-slate-400 leading-snug line-clamp-2">${ext.description}</p>`
           : ''
       }
     `;
@@ -643,7 +643,7 @@ function renderHistoryViewer() {
   filtered.forEach((item) => {
     const card = document.createElement('div');
     card.className =
-      'glass-panel p-2.5 rounded-xl border border-slate-800/80 hover:border-slate-700 transition-all space-y-1.5';
+      'glass-panel p-2.5 rounded-xl border border-slate-200/90 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 transition-all space-y-1.5';
 
     const domain = formatDomain(item.url);
     const rawTime = (item as any).visitTime || (item as any).lastVisitTime || (item as any).visit_timestamp;
@@ -652,15 +652,15 @@ function renderHistoryViewer() {
 
     card.innerHTML = `
       <div class="flex items-start justify-between space-x-2">
-        <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-slate-200 hover:text-amber-400 transition-colors line-clamp-1 flex-1">
+        <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-slate-900 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 transition-colors line-clamp-1 flex-1">
           ${item.title || item.url}
         </a>
         <span class="text-[9px] text-slate-500 font-mono whitespace-nowrap">${timeAgo}</span>
       </div>
 
       <div class="flex items-center justify-between text-[10px]">
-        <div class="flex items-center space-x-1.5 text-slate-400 font-mono">
-          <svg class="w-3 h-3 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 font-mono">
+          <svg class="w-3 h-3 text-cyan-600 dark:text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
             <line x1="2" y1="12" x2="22" y2="12"/>
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
@@ -668,7 +668,7 @@ function renderHistoryViewer() {
           <span class="truncate max-w-[170px]">${domain}</span>
         </div>
 
-        <span class="px-1.5 py-0.2 rounded font-mono text-[9px] bg-slate-800/80 text-cyan-300 border border-slate-700">
+        <span class="px-1.5 py-0.2 rounded font-mono text-[9px] bg-slate-100 dark:bg-slate-800/80 text-cyan-800 dark:text-cyan-300 border border-slate-200 dark:border-slate-700">
           ${deviceName}
         </span>
       </div>
@@ -718,6 +718,10 @@ function setupEventListeners() {
   document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
     const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
     applyTheme(nextTheme);
+    switchTab(state.activeTab);
+    updateHeaderStatusBadge();
+    renderExtensionsGallery();
+    renderHistoryViewer();
     showToast(`Switched to ${nextTheme} mode`);
   });
 
@@ -748,8 +752,8 @@ function setupEventListeners() {
   shareBtn?.addEventListener('click', () => {
     state.p2pSubtab = 'share';
     shareBtn.className =
-      'flex-1 py-1.5 text-center text-amber-400 border-b border-amber-400 font-semibold';
-    connectBtn!.className = 'flex-1 py-1.5 text-center text-slate-400 hover:text-slate-200';
+      'flex-1 py-1.5 text-center text-amber-700 dark:text-amber-400 border-b-2 border-amber-600 dark:border-amber-400 font-bold';
+    connectBtn!.className = 'flex-1 py-1.5 text-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200';
     sharePanel?.classList.remove('hidden');
     connectPanel?.classList.add('hidden');
   });
@@ -757,8 +761,8 @@ function setupEventListeners() {
   connectBtn?.addEventListener('click', () => {
     state.p2pSubtab = 'connect';
     connectBtn.className =
-      'flex-1 py-1.5 text-center text-amber-400 border-b border-amber-400 font-semibold';
-    shareBtn!.className = 'flex-1 py-1.5 text-center text-slate-400 hover:text-slate-200';
+      'flex-1 py-1.5 text-center text-amber-700 dark:text-amber-400 border-b-2 border-amber-600 dark:border-amber-400 font-bold';
+    shareBtn!.className = 'flex-1 py-1.5 text-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200';
     connectPanel?.classList.remove('hidden');
     sharePanel?.classList.add('hidden');
   });
@@ -833,10 +837,10 @@ function setupEventListeners() {
 
       document.querySelectorAll<HTMLButtonElement>('.ext-filter-btn').forEach((b) => {
         b.className =
-          'ext-filter-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700';
+          'ext-filter-btn px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-slate-200 dark:border-slate-700';
       });
       btn.className =
-        'ext-filter-btn px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        'ext-filter-btn px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40 font-semibold';
 
       renderExtensionsGallery();
     });
@@ -884,10 +888,10 @@ function setupEventListeners() {
       const targetLimit = Number((btn as HTMLElement).dataset.limit) || 150;
       document.querySelectorAll('.hist-limit-btn').forEach((b) => {
         b.className =
-          'hist-limit-btn px-2 py-0.5 rounded border border-slate-800 hover:border-cyan-500/40 text-slate-400';
+          'hist-limit-btn px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 text-slate-600 dark:text-slate-400';
       });
       btn.className =
-        'hist-limit-btn px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold';
+        'hist-limit-btn px-2 py-0.5 rounded bg-cyan-100 text-cyan-900 border border-cyan-400 dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-500/50 font-bold';
       loadHistory(targetLimit, state.historySearchQuery);
     });
   });

@@ -86,10 +86,12 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
 }
 
 .dark .glass-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
 }
 
@@ -98,6 +100,11 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
+  box-shadow: 0 6px 24px -2px rgba(15, 23, 42, 0.08);
+}
+
+.dark .glass-panel-elevated {
+  box-shadow: 0 10px 40px -4px rgba(0, 0, 0, 0.6);
 }
 
 .glass-gold-glow {
