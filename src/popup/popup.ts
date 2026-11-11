@@ -31,6 +31,12 @@ import {
 // State & Defaults
 // ============================================================================
 
+export interface PairedPeer {
+  id: string;
+  name: string;
+  lastSeen: number;
+}
+
 interface PopupLocalState {
   activeTab: 'p2p' | 'extensions' | 'history' | 'settings';
   p2pSubtab: 'share' | 'connect';
@@ -40,7 +46,7 @@ interface PopupLocalState {
   currentFingerprint: string;
   currentTicket: string;
   generatedAnswerTicket: string;
-  pairedPeer: { id: string; name: string; lastSeen: number } | null;
+  pairedPeers: PairedPeer[];
   syncState: SyncState;
   installedExtensions: ExtensionItem[];
   remoteExtensions: ExtensionItem[];
@@ -170,7 +176,7 @@ const state: PopupLocalState = {
   currentFingerprint: '',
   currentTicket: '',
   generatedAnswerTicket: '',
-  pairedPeer: null,
+  pairedPeers: [],
   syncState: { ...DEFAULT_SYNC_STATE },
   installedExtensions: [...MOCK_INSTALLED_EXTENSIONS],
   remoteExtensions: [...MOCK_REMOTE_EXTENSIONS],
@@ -305,6 +311,24 @@ function formatDomain(url: string): string {
   }
 }
 
+function shouldFilterUrl(url: string): boolean {
+  if (!url) return true;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return true;
+    if (
+      parsed.hostname === 'localhost' ||
+      parsed.hostname === '127.0.0.1' ||
+      parsed.hostname === '[::1]'
+    ) {
+      return true;
+    }
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 function getMonogram(name: string): string {
   if (!name) return 'EX';
   const clean = name.trim().replace(/[^a-zA-Z0-9\s]/g, '');
@@ -402,26 +426,40 @@ function getOrCreateP2PClient(): WebRTCP2PClient {
           updateHeaderStatusBadge();
         }
       },
-      onPeerConnected: (peer) => {
+      onPeerConnected: async (peer) => {
         console.log('[Popup:P2P] Peer connected:', peer);
-        const paired = { id: peer.deviceId, name: peer.deviceName, lastSeen: Date.now() };
-        state.pairedPeer = paired;
-        state.syncState.p2pConnectedPeers = 1;
+        const newPeer: PairedPeer = {
+          id: peer.deviceId,
+          name: peer.deviceName,
+          lastSeen: Date.now(),
+        };
+
+        // Append to mesh roster without removing existing peers
+        const idx = state.pairedPeers.findIndex(
+          (p) => p.id === newPeer.id || p.name === newPeer.name
+        );
+        if (idx >= 0) {
+          state.pairedPeers[idx] = newPeer;
+        } else {
+          state.pairedPeers.push(newPeer);
+        }
+
+        state.syncState.p2pConnectedPeers = state.pairedPeers.length;
         state.syncState.status = 'connected';
         renderP2PRoster();
         updateHeaderStatusBadge();
         showToast(`Connected to ${peer.deviceName}!`);
 
-        // Persist paired peer to local storage
+        // Persist entire paired peers array to local storage
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
           chrome.storage.local.set({
-            imhotep_p2p_paired_peer: paired,
+            imhotep_p2p_paired_peers: state.pairedPeers,
             imhotep_p2p_connected: true,
           });
         }
-        sendRuntimeMessage({ type: 'SET_PEER_CONNECTED', payload: paired });
+        sendRuntimeMessage({ type: 'SET_PAIRED_PEERS', payload: state.pairedPeers });
 
-        // Send installed extensions immediately to remote peer
+        // 1. Send installed extensions to remote peer
         if (popupP2PClient && state.installedExtensions.length > 0) {
           const payload = state.installedExtensions.map((ext) => ({
             id: ext.id,
@@ -433,28 +471,46 @@ function getOrCreateP2PClient(): WebRTCP2PClient {
           popupP2PClient.syncExtensions(payload).catch((e) => console.error(e));
         }
 
-        // Send recent history to remote peer
-        if (popupP2PClient && state.recentHistory.length > 0) {
-          const histPayload = state.recentHistory.slice(0, 30).map((h) => ({
-            url: h.url,
-            title: h.title,
-            lastVisitTime: (h as any).visitTime || Date.now(),
-          }));
-          popupP2PClient.syncHistoryBatch(histPayload).catch((e) => console.error(e));
+        // 2. Fetch and send full native browser history (up to 150 items)
+        if (popupP2PClient && typeof chrome !== 'undefined' && chrome.history && chrome.history.search) {
+          try {
+            const nativeVisits = await chrome.history.search({ text: '', maxResults: 150 });
+            const histPayload = nativeVisits
+              .filter((h) => h.url && !shouldFilterUrl(h.url))
+              .map((h) => ({
+                url: h.url!,
+                title: h.title || h.url!,
+                lastVisitTime: h.lastVisitTime || Date.now(),
+                visitCount: h.visitCount || 1,
+              }));
+            if (histPayload.length > 0) {
+              await popupP2PClient.syncHistoryBatch(histPayload);
+              console.log(`[Popup:P2P] Synced ${histPayload.length} native visits to ${peer.deviceName}`);
+            }
+          } catch (e) {
+            console.warn('[Popup:P2P] Could not search native history:', e);
+          }
         }
       },
       onHistoryBatchReceived: async (items) => {
         console.log('[Popup:P2P] Received history batch:', items.length);
-        const peerName = state.pairedPeer?.name || 'Remote Peer';
-        const peerId = state.pairedPeer?.id || 'remote-peer';
+        const peerName = state.pairedPeers[state.pairedPeers.length - 1]?.name || 'Remote Peer';
+        const peerId = state.pairedPeers[state.pairedPeers.length - 1]?.id || 'remote-peer';
+        let nativeIngestedCount = 0;
+
         for (const item of items) {
+          if (!item.url || shouldFilterUrl(item.url)) continue;
+
+          // Ingest directly into the browser's native SQLite history database
           if (typeof chrome !== 'undefined' && chrome.history && chrome.history.addUrl) {
             try {
               await chrome.history.addUrl({ url: item.url });
+              nativeIngestedCount++;
             } catch (e) {
-              console.warn(e);
+              console.warn('Could not addUrl:', e);
             }
           }
+
           state.recentHistory.unshift({
             id: `p2p-${Date.now()}-${Math.random()}`,
             url: item.url,
@@ -464,10 +520,11 @@ function getOrCreateP2PClient(): WebRTCP2PClient {
             deviceName: peerName,
           });
         }
-        renderHistoryViewer();
-        showToast(`Synced ${items.length} visits from peer!`);
 
-        // Persist synced history
+        renderHistoryViewer();
+        showToast(`Synced ${nativeIngestedCount} visits into native browser history!`);
+
+        // Persist synced history in local storage
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
           chrome.storage.local.set({
             imhotep_synced_history: state.recentHistory.slice(0, 500),
@@ -595,25 +652,27 @@ function renderP2PRoster() {
     </div>
   `;
 
-  if (state.syncState.p2pConnectedPeers > 0 || state.pairedPeer) {
-    const peerName = state.pairedPeer?.name || 'Remote Peer Device';
-    const peerItem = document.createElement('div');
-    peerItem.className =
-      'p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-between text-xs';
-    peerItem.innerHTML = `
-      <div class="flex items-center space-x-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse-glow"></span>
-        <div>
-          <div class="font-semibold text-slate-900 dark:text-slate-200 flex items-center space-x-1">
-            <span>${peerName}</span>
-            <span class="text-[9px] px-1 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 font-mono font-semibold">Paired</span>
+  if (state.pairedPeers.length > 0) {
+    state.pairedPeers.forEach((p) => {
+      const isOnline = Date.now() - p.lastSeen < 1000 * 60 * 60 * 24;
+      const peerItem = document.createElement('div');
+      peerItem.className =
+        'p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-between text-xs';
+      peerItem.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <span class="w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 dark:bg-emerald-400 animate-pulse-glow' : 'bg-slate-400'}"></span>
+          <div>
+            <div class="font-semibold text-slate-900 dark:text-slate-200 flex items-center space-x-1">
+              <span>${p.name}</span>
+              <span class="text-[9px] px-1 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 font-mono font-semibold">Paired</span>
+            </div>
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">P2P Mesh Device • Active</div>
           </div>
-          <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono">P2P Mesh Active • Syncing</div>
         </div>
-      </div>
-      <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 font-mono">Connected</span>
-    `;
-    peersListEl.appendChild(peerItem);
+        <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 font-mono">Connected</span>
+      `;
+      peersListEl.appendChild(peerItem);
+    });
   }
 }
 
@@ -1069,13 +1128,32 @@ function setupEventListeners() {
 
   // P2P Sync Now
   document.getElementById('btn-p2p-sync-now')?.addEventListener('click', async () => {
-    showToast('Syncing micro-batches over P2P...');
-    const res = await sendRuntimeMessage({ type: 'TRIGGER_FLUSH' });
-    if (res.success) {
-      state.syncState.bufferedCount = 0;
-      updateHeaderStatusBadge();
-      showToast('P2P sync complete!');
+    showToast('Syncing native history & extensions over P2P...');
+    await sendRuntimeMessage({ type: 'TRIGGER_FLUSH' });
+
+    // Send native history to remote peer if connected
+    if (popupP2PClient && typeof chrome !== 'undefined' && chrome.history && chrome.history.search) {
+      try {
+        const nativeVisits = await chrome.history.search({ text: '', maxResults: 150 });
+        const histPayload = nativeVisits
+          .filter((h) => h.url && !shouldFilterUrl(h.url))
+          .map((h) => ({
+            url: h.url!,
+            title: h.title || h.url!,
+            lastVisitTime: h.lastVisitTime || Date.now(),
+            visitCount: h.visitCount || 1,
+          }));
+        if (histPayload.length > 0) {
+          await popupP2PClient.syncHistoryBatch(histPayload);
+        }
+      } catch (e) {
+        console.warn('Sync history failed:', e);
+      }
     }
+
+    state.syncState.bufferedCount = 0;
+    updateHeaderStatusBadge();
+    showToast('P2P sync complete! All browser visits updated.');
   });
 
   // Extensions Filter Chips
@@ -1183,9 +1261,20 @@ function setupEventListeners() {
     if (confirm('Clear local cryptographic session key and disconnect all P2P peers?')) {
       await sendRuntimeMessage({ type: 'CLEAR_MASTER_KEY' });
       await sendRuntimeMessage({ type: 'P2P_DISCONNECT' });
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        await chrome.storage.local.remove([
+          'imhotep_p2p_paired_peers',
+          'imhotep_p2p_paired_peer',
+          'imhotep_p2p_remote_extensions',
+          'imhotep_synced_history',
+        ]);
+      }
+      state.pairedPeers = [];
+      state.remoteExtensions = [];
       state.syncState.hasMasterKey = false;
       state.syncState.p2pConnectedPeers = 0;
       renderP2PRoster();
+      renderExtensionsGallery();
       updateHeaderStatusBadge();
       showToast('Keys cleared from memory & peers disconnected');
     }
@@ -1203,12 +1292,17 @@ async function init() {
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     try {
       const stored = await chrome.storage.local.get([
+        'imhotep_p2p_paired_peers',
         'imhotep_p2p_paired_peer',
         'imhotep_p2p_remote_extensions',
         'imhotep_synced_history',
       ]);
-      if (stored.imhotep_p2p_paired_peer) {
-        state.pairedPeer = stored.imhotep_p2p_paired_peer;
+      if (Array.isArray(stored.imhotep_p2p_paired_peers) && stored.imhotep_p2p_paired_peers.length > 0) {
+        state.pairedPeers = stored.imhotep_p2p_paired_peers;
+        state.syncState.p2pConnectedPeers = state.pairedPeers.length;
+        state.syncState.status = 'connected';
+      } else if (stored.imhotep_p2p_paired_peer) {
+        state.pairedPeers = [stored.imhotep_p2p_paired_peer];
         state.syncState.p2pConnectedPeers = 1;
         state.syncState.status = 'connected';
       }
@@ -1228,8 +1322,8 @@ async function init() {
     const statusRes = await sendRuntimeMessage<SyncState>({ type: 'GET_STATUS' });
     if (statusRes.success && statusRes.data) {
       state.syncState = { ...state.syncState, ...statusRes.data };
-      if (state.pairedPeer) {
-        state.syncState.p2pConnectedPeers = 1;
+      if (state.pairedPeers.length > 0) {
+        state.syncState.p2pConnectedPeers = state.pairedPeers.length;
         state.syncState.status = 'connected';
       }
     }
