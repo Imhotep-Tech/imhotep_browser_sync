@@ -411,7 +411,12 @@ export async function syncExtensionsNow(): Promise<{ count: number; error?: stri
 // ============================================================================
 
 function initP2PClient(): void {
-  p2pClient = new WebRTCP2PClient({
+  if (typeof RTCPeerConnection === 'undefined') {
+    console.log('[Imhotep:SW] RTCPeerConnection not available in Service Worker scope; P2P engine active in popup context');
+    return;
+  }
+  try {
+    p2pClient = new WebRTCP2PClient({
     deviceId,
     deviceName,
     encryptionKey: activeCryptoKey || undefined,
@@ -469,6 +474,9 @@ function initP2PClient(): void {
       lastError = err.message;
     },
   });
+  } catch (e) {
+    console.warn('[Imhotep:SW] Could not init P2P in worker:', e);
+  }
 }
 
 // ============================================================================

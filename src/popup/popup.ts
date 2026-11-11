@@ -20,6 +20,7 @@ import {
   decompressSignalTicket,
 } from '../p2p/qr';
 import { PairingSignalTicket } from '../types/p2p';
+import { WebRTCP2PClient } from '../p2p/webrtc';
 import {
   generateMnemonic,
   derivePairingDisplayCode,
@@ -375,8 +376,99 @@ function updateHeaderStatusBadge() {
 }
 
 // ============================================================================
-// P2P Hub Logic
+// P2P Hub Logic (Client-Side Native WebRTC Engine in Popup DOM)
 // ============================================================================
+
+let popupP2PClient: WebRTCP2PClient | null = null;
+
+function getOrCreateP2PClient(): WebRTCP2PClient {
+  if (!popupP2PClient) {
+    popupP2PClient = new WebRTCP2PClient({
+      deviceId: state.syncState.deviceId,
+      deviceName: state.syncState.deviceName,
+      onStateChange: (connState) => {
+        console.log('[Popup:P2P] State:', connState);
+        if (connState === 'connected') {
+          state.syncState.p2pConnectedPeers = 1;
+          state.syncState.status = 'connected';
+          renderP2PRoster();
+          updateHeaderStatusBadge();
+          showToast('🟢 P2P WebRTC Connected!');
+        } else if (connState === 'disconnected' || connState === 'failed') {
+          state.syncState.p2pConnectedPeers = 0;
+          renderP2PRoster();
+          updateHeaderStatusBadge();
+        }
+      },
+      onPeerConnected: (peer) => {
+        console.log('[Popup:P2P] Peer connected:', peer);
+        state.syncState.p2pConnectedPeers = 1;
+        renderP2PRoster();
+        updateHeaderStatusBadge();
+        showToast(`Connected to ${peer.deviceName}!`);
+
+        // Send installed extensions immediately to remote peer
+        if (popupP2PClient && state.installedExtensions.length > 0) {
+          const payload = state.installedExtensions.map((ext) => ({
+            id: ext.id,
+            name: ext.name,
+            version: ext.version,
+            description: ext.description,
+            enabled: ext.enabled,
+          }));
+          popupP2PClient.syncExtensions(payload).catch((e) => console.error(e));
+        }
+
+        // Send recent history to remote peer
+        if (popupP2PClient && state.recentHistory.length > 0) {
+          const histPayload = state.recentHistory.slice(0, 30).map((h) => ({
+            url: h.url,
+            title: h.title,
+            lastVisitTime: (h as any).visitTime || Date.now(),
+          }));
+          popupP2PClient.syncHistoryBatch(histPayload).catch((e) => console.error(e));
+        }
+      },
+      onHistoryBatchReceived: async (items) => {
+        console.log('[Popup:P2P] Received history batch:', items.length);
+        for (const item of items) {
+          if (typeof chrome !== 'undefined' && chrome.history && chrome.history.addUrl) {
+            try {
+              await chrome.history.addUrl({ url: item.url });
+            } catch (e) {
+              console.warn(e);
+            }
+          }
+          state.recentHistory.unshift({
+            id: `p2p-${Date.now()}-${Math.random()}`,
+            url: item.url,
+            title: item.title || item.url,
+            visitTime: item.lastVisitTime || Date.now(),
+            deviceId: 'remote-peer',
+            deviceName: 'Remote Browser',
+          });
+        }
+        renderHistoryViewer();
+        showToast(`Synced ${items.length} visits from peer!`);
+      },
+      onExtensionBatchReceived: async (extensions) => {
+        console.log('[Popup:P2P] Received extension batch:', extensions.length);
+        const mapped: ExtensionItem[] = extensions.map((ext) => ({
+          id: ext.id,
+          name: ext.name,
+          version: ext.version,
+          enabled: ext.enabled,
+          description: ext.description,
+          storeUrl: `https://chromewebstore.google.com/detail/${ext.id}`,
+        }));
+        state.remoteExtensions = mapped;
+        renderExtensionsGallery();
+        showToast(`Discovered ${mapped.length} extensions from peer!`);
+      },
+    });
+  }
+  return popupP2PClient;
+}
 
 async function refreshPairingCredentials() {
   const qrLoading = document.getElementById('qr-loading');
@@ -413,27 +505,15 @@ async function refreshPairingCredentials() {
       });
     }
 
-    // Request actual WebRTC Offer Ticket from background service worker
-    let qrPayload = mnemonic;
-    try {
-      const pairingRes = await sendRuntimeMessage<PairingSignalTicket>({
-        type: 'P2P_START_PAIRING',
-      });
+    // Generate real WebRTC Offer Ticket natively in window DOM
+    const client = getOrCreateP2PClient();
+    const offerTicket = await client.createOffer();
+    const ticketStr = await compressSignalTicket(offerTicket);
+    state.currentTicket = ticketStr;
 
-      if (pairingRes && pairingRes.success && pairingRes.data) {
-        const ticketStr = await compressSignalTicket(pairingRes.data);
-        state.currentTicket = ticketStr;
-        qrPayload = ticketStr;
-      } else {
-        state.currentTicket = mnemonic;
-      }
-    } catch {
-      state.currentTicket = mnemonic;
-    }
-
-    // Render QR Code onto canvas
+    // Render QR Code onto canvas with real ticket
     if (qrCanvas) {
-      await renderPairingQRCodeToCanvas(qrCanvas, qrPayload, {
+      await renderPairingQRCodeToCanvas(qrCanvas, ticketStr, {
         width: 176,
         margin: 1,
         darkColor: '#070A13',
@@ -918,47 +998,38 @@ function setupEventListeners() {
         }
       }
 
-      showToast(ticket.type === 'offer' ? 'Accepting offer & creating answer...' : 'Connecting to peer...');
+      const client = getOrCreateP2PClient();
 
-      const res = await sendRuntimeMessage<PairingSignalTicket>({
-        type: 'P2P_CONNECT_MNEMONIC',
-        payload: { ticket },
-      });
+      if (ticket.type === 'offer') {
+        showToast('Accepting offer & creating answer...');
+        const answerTicket = await client.acceptOfferAndCreateAnswer(ticket);
+        const answerStr = await compressSignalTicket(answerTicket);
+        state.generatedAnswerTicket = answerStr;
 
-      if (res.success) {
-        if (ticket.type === 'offer' && res.data) {
-          // Device B received Offer -> Generated Answer Ticket!
-          const answerStr = await compressSignalTicket(res.data);
-          state.generatedAnswerTicket = answerStr;
+        try {
+          await navigator.clipboard.writeText(answerStr);
+        } catch {}
 
-          // Automatically copy answer to clipboard for seamless workflow
-          try {
-            await navigator.clipboard.writeText(answerStr);
-          } catch {
-            // ignore
-          }
-
-          const answerBox = document.getElementById('answer-ticket-box');
-          const answerInput = document.getElementById('output-answer-ticket') as HTMLTextAreaElement;
-          if (answerBox && answerInput) {
-            answerInput.value = answerStr;
-            answerBox.classList.remove('hidden');
-          }
-          showToast('Answer copied! Paste into first browser to finish pairing.');
-        } else {
-          // Device A received Answer -> Connected!
-          state.syncState.p2pConnectedPeers += 1;
-          renderP2PRoster();
-          updateHeaderStatusBadge();
-          showToast('🎉 Direct P2P DataChannel established!');
-          input.value = '';
-          const answerBox = document.getElementById('answer-ticket-box');
-          if (answerBox) answerBox.classList.add('hidden');
+        const answerBox = document.getElementById('answer-ticket-box');
+        const answerInput = document.getElementById('output-answer-ticket') as HTMLTextAreaElement;
+        if (answerBox && answerInput) {
+          answerInput.value = answerStr;
+          answerBox.classList.remove('hidden');
         }
-      } else {
-        showToast(res.error || 'Pairing failed');
+        showToast('Answer copied to clipboard! Paste into Chrome to finish.');
+      } else if (ticket.type === 'answer') {
+        showToast('Connecting to peer...');
+        await client.acceptAnswer(ticket);
+        state.syncState.p2pConnectedPeers = 1;
+        renderP2PRoster();
+        updateHeaderStatusBadge();
+        showToast('🎉 Direct P2P Connected!');
+        input.value = '';
+        const answerBox = document.getElementById('answer-ticket-box');
+        if (answerBox) answerBox.classList.add('hidden');
       }
     } catch (err: any) {
+      console.error('Pairing error:', err);
       showToast('Pairing error: ' + (err?.message || err));
     }
   });
