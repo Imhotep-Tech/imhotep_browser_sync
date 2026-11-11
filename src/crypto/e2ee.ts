@@ -3,7 +3,7 @@
  *
  * Implements military-grade, zero-knowledge encryption using the native
  * Web Cryptography API (crypto.subtle). Plaintext data never touches the wire
- * or persistent cloud storage unencrypted.
+ * or remote peers unencrypted.
  *
  * Specifications:
  * - PBKDF2 key derivation (minimum 100,000 iterations, SHA-256, 16-byte random salt).

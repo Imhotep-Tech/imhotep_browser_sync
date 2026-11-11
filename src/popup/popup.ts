@@ -2,8 +2,8 @@
  * Imhotep Browser Sync - Antigravity Extension Popup UI
  *
  * Weightless, spatial glassmorphic UI with zero heavy frameworks (~60KB).
- * Implements Direct P2P Hub, Cloud Vault Hub, Extension Gallery with 1-Click Reinstall,
- * Decrypted History Viewer, and Settings.
+ * Implements Direct P2P Hub, Extension Gallery with 1-Click Reinstall,
+ * Synced History Viewer, and Settings. 100% Peer-to-Peer with zero servers.
  */
 
 import {
@@ -26,9 +26,8 @@ import {
 // ============================================================================
 
 interface PopupLocalState {
-  activeTab: 'p2p' | 'cloud' | 'extensions' | 'history' | 'settings';
+  activeTab: 'p2p' | 'extensions' | 'history' | 'settings';
   p2pSubtab: 'share' | 'connect';
-  authSubtab: 'signin' | 'signup';
   extensionFilter: 'all' | 'remote' | 'installed';
   theme: 'dark' | 'light';
   currentMnemonic: string;
@@ -51,8 +50,6 @@ const DEFAULT_SYNC_STATE: SyncState = {
   lastSyncTime: Date.now() - 1000 * 60 * 3, // 3 mins ago
   bufferedCount: 4,
   totalSyncedCount: 142,
-  isCloudAuthenticated: false,
-  userEmail: null,
   p2pConnectedPeers: 1,
   lastError: null,
   hasMasterKey: true,
@@ -131,8 +128,8 @@ const MOCK_RECENT_HISTORY: HistoryVisitItem[] = [
   },
   {
     id: 'hist-3',
-    url: 'https://supabase.com/docs/guides/realtime',
-    title: 'Realtime Documentation | Supabase',
+    url: 'https://webrtc.org/architecture',
+    title: 'WebRTC Architecture & Real-Time Communications',
     visitTime: Date.now() - 1000 * 60 * 45,
     deviceId: 'macbook-pro-m3',
     deviceName: 'MacBook Pro',
@@ -158,7 +155,6 @@ const MOCK_RECENT_HISTORY: HistoryVisitItem[] = [
 const state: PopupLocalState = {
   activeTab: 'p2p',
   p2pSubtab: 'share',
-  authSubtab: 'signin',
   extensionFilter: 'all',
   theme: (localStorage.getItem('imhotep_theme') as 'dark' | 'light') || 'dark',
   currentMnemonic: '',
@@ -217,18 +213,6 @@ function handleMockMessage<T = any>(message: RuntimeMessage): RuntimeResponse<T>
       return { success: true, data: state.remoteExtensions as any };
     case 'SYNC_EXTENSIONS_NOW':
       return { success: true, data: [...state.installedExtensions, ...state.remoteExtensions] as any };
-    case 'AUTH_SIGN_IN':
-      state.syncState.isCloudAuthenticated = true;
-      state.syncState.userEmail = message.payload?.email || 'user@imhotep.tech';
-      return { success: true, data: { email: state.syncState.userEmail } as any };
-    case 'AUTH_SIGN_UP':
-      state.syncState.isCloudAuthenticated = true;
-      state.syncState.userEmail = message.payload?.email || 'user@imhotep.tech';
-      return { success: true, data: { email: state.syncState.userEmail } as any };
-    case 'AUTH_SIGN_OUT':
-      state.syncState.isCloudAuthenticated = false;
-      state.syncState.userEmail = null;
-      return { success: true };
     case 'SET_MASTER_KEY':
       state.syncState.hasMasterKey = true;
       return { success: true };
@@ -354,33 +338,14 @@ function updateHeaderStatusBadge() {
   const dot = document.getElementById('status-dot');
   const text = document.getElementById('status-text');
   const iconP2p = document.getElementById('icon-mode-p2p');
-  const iconCloud = document.getElementById('icon-mode-cloud');
 
   if (!badge || !dot || !text) return;
 
-  if (state.syncState.mode === 'p2p') {
-    text.textContent = state.syncState.p2pConnectedPeers > 0 ? 'P2P Active' : 'P2P Ready';
-    badge.className =
-      'flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-950/60 text-emerald-400 border border-emerald-800/60';
-    dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-glow';
-    iconP2p?.classList.remove('hidden');
-    iconCloud?.classList.add('hidden');
-  } else if (state.syncState.mode === 'cloud') {
-    text.textContent = state.syncState.isCloudAuthenticated ? 'Cloud Synced' : 'Cloud Locked';
-    badge.className = state.syncState.isCloudAuthenticated
-      ? 'flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-cyan-950/60 text-cyan-400 border border-cyan-800/60'
-      : 'flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-950/60 text-amber-400 border border-amber-800/60';
-    dot.className = state.syncState.isCloudAuthenticated
-      ? 'w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse-glow'
-      : 'w-1.5 h-1.5 rounded-full bg-amber-400';
-    iconP2p?.classList.add('hidden');
-    iconCloud?.classList.remove('hidden');
-  } else {
-    text.textContent = 'Offline';
-    badge.className =
-      'flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-900/60 text-slate-400 border border-slate-700/60';
-    dot.className = 'w-1.5 h-1.5 rounded-full bg-slate-500';
-  }
+  text.textContent = state.syncState.p2pConnectedPeers > 0 ? 'P2P Active' : 'P2P Ready';
+  badge.className =
+    'flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-950/60 text-emerald-400 border border-emerald-800/60';
+  dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-glow';
+  iconP2p?.classList.remove('hidden');
 
   // Footer buffer count
   const bufferEl = document.getElementById('footer-buffer-count');
@@ -501,39 +466,6 @@ function renderP2PRoster() {
   }
 }
 
-// ============================================================================
-// Cloud Vault Logic
-// ============================================================================
-
-function renderCloudVaultUI() {
-  const signedOutCard = document.getElementById('cloud-auth-signed-out');
-  const signedInCard = document.getElementById('cloud-auth-signed-in');
-  const userEmailEl = document.getElementById('cloud-user-email');
-  const masterKeyBadge = document.getElementById('master-key-status-badge');
-
-  if (state.syncState.isCloudAuthenticated) {
-    signedOutCard?.classList.add('hidden');
-    signedInCard?.classList.remove('hidden');
-    if (userEmailEl) {
-      userEmailEl.textContent = state.syncState.userEmail || 'user@imhotep.tech';
-    }
-  } else {
-    signedOutCard?.classList.remove('hidden');
-    signedInCard?.classList.add('hidden');
-  }
-
-  if (masterKeyBadge) {
-    if (state.syncState.hasMasterKey) {
-      masterKeyBadge.textContent = 'Unlocked';
-      masterKeyBadge.className =
-        'text-[10px] px-2 py-0.5 rounded font-mono bg-emerald-950 text-emerald-400 border border-emerald-800';
-    } else {
-      masterKeyBadge.textContent = 'Locked';
-      masterKeyBadge.className =
-        'text-[10px] px-2 py-0.5 rounded font-mono bg-rose-950 text-rose-400 border border-rose-800';
-    }
-  }
-}
 
 // ============================================================================
 // Extensions Gallery & 1-Click Reinstall Logic
@@ -762,28 +694,12 @@ async function loadHistory(limit: number = state.historyLimit, query: string = s
 async function renderSettings() {
   const nameInput = document.getElementById('input-device-name') as HTMLInputElement;
   const idLabel = document.getElementById('label-device-id');
-  const urlInput = document.getElementById('input-cloud-url') as HTMLInputElement;
-  const keyInput = document.getElementById('input-cloud-key') as HTMLInputElement;
 
   if (nameInput) {
     nameInput.value = state.syncState.deviceName;
   }
   if (idLabel) {
     idLabel.textContent = state.syncState.deviceId;
-  }
-
-  try {
-    const res = await sendRuntimeMessage({ type: 'GET_CLOUD_CONFIG' });
-    if (res.success && res.data) {
-      if (urlInput && res.data.supabaseUrl && !res.data.supabaseUrl.includes('your-project')) {
-        urlInput.value = res.data.supabaseUrl;
-      }
-      if (keyInput && res.data.supabaseAnonKey && !res.data.supabaseAnonKey.includes('placeholder')) {
-        keyInput.value = res.data.supabaseAnonKey;
-      }
-    }
-  } catch (e) {
-    console.warn('Failed to load cloud config in settings:', e);
   }
 }
 
@@ -797,20 +713,6 @@ function setupEventListeners() {
     const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
     applyTheme(nextTheme);
     showToast(`Switched to ${nextTheme} mode`);
-  });
-
-  // Sync mode toggle (P2P vs Cloud)
-  document.getElementById('btn-toggle-sync-mode')?.addEventListener('click', async () => {
-    const nextMode: SyncMode = state.syncState.mode === 'p2p' ? 'cloud' : 'p2p';
-    const res = await sendRuntimeMessage({
-      type: 'SET_SYNC_MODE',
-      payload: { mode: nextMode },
-    });
-    if (res.success) {
-      state.syncState.mode = nextMode;
-      updateHeaderStatusBadge();
-      showToast(`Mode switched to ${nextMode.toUpperCase()}`);
-    }
   });
 
   // Tab navigation
@@ -829,11 +731,6 @@ function setupEventListeners() {
   document.getElementById('btn-onboarding-p2p')?.addEventListener('click', () => {
     document.getElementById('onboarding-banner')?.classList.add('hidden');
     switchTab('p2p');
-  });
-
-  document.getElementById('btn-onboarding-cloud')?.addEventListener('click', () => {
-    document.getElementById('onboarding-banner')?.classList.add('hidden');
-    switchTab('cloud');
   });
 
   // P2P Subtabs (Share vs Connect)
@@ -918,106 +815,6 @@ function setupEventListeners() {
       state.syncState.bufferedCount = 0;
       updateHeaderStatusBadge();
       showToast('P2P sync complete!');
-    }
-  });
-
-  // Cloud Auth Subtabs (Sign In vs Sign Up)
-  const authSignInBtn = document.getElementById('auth-subtab-signin');
-  const authSignUpBtn = document.getElementById('auth-subtab-signup');
-  const authActionBtn = document.getElementById('btn-cloud-auth-action');
-
-  authSignInBtn?.addEventListener('click', () => {
-    state.authSubtab = 'signin';
-    authSignInBtn.className = 'text-amber-400 font-bold border-b-2 border-amber-400 pb-1';
-    authSignUpBtn!.className = 'text-slate-400 hover:text-slate-200 pb-1';
-    if (authActionBtn) authActionBtn.textContent = 'Sign In to Cloud Vault';
-  });
-
-  authSignUpBtn?.addEventListener('click', () => {
-    state.authSubtab = 'signup';
-    authSignUpBtn.className = 'text-amber-400 font-bold border-b-2 border-amber-400 pb-1';
-    authSignInBtn!.className = 'text-slate-400 hover:text-slate-200 pb-1';
-    if (authActionBtn) authActionBtn.textContent = 'Create Encrypted Vault';
-  });
-
-  // Cloud Auth Action Button
-  authActionBtn?.addEventListener('click', async () => {
-    const emailInput = document.getElementById('cloud-email') as HTMLInputElement;
-    const passInput = document.getElementById('cloud-password') as HTMLInputElement;
-
-    const email = emailInput?.value?.trim();
-    const password = passInput?.value;
-
-    if (!email || !password) {
-      showToast('Please enter both email and password');
-      return;
-    }
-
-    const type = state.authSubtab === 'signin' ? 'AUTH_SIGN_IN' : 'AUTH_SIGN_UP';
-    showToast('Authenticating with Supabase...');
-    const res = await sendRuntimeMessage({
-      type,
-      payload: { email, password },
-    });
-
-    if (res.success) {
-      if ((res.data as any)?.requiresEmailConfirmation) {
-        showToast('Vault account created! Please verify via confirmation email.');
-        state.authSubtab = 'signin';
-        authSignInBtn?.click();
-      } else {
-        state.syncState.isCloudAuthenticated = true;
-        state.syncState.userEmail = email;
-        state.syncState.mode = 'cloud';
-        renderCloudVaultUI();
-        updateHeaderStatusBadge();
-        showToast('Vault authenticated successfully!');
-      }
-    } else {
-      showToast(res.error || 'Authentication error');
-    }
-  });
-
-  // Cloud Sign Out
-  document.getElementById('btn-cloud-sign-out')?.addEventListener('click', async () => {
-    await sendRuntimeMessage({ type: 'AUTH_SIGN_OUT' });
-    state.syncState.isCloudAuthenticated = false;
-    state.syncState.userEmail = null;
-    renderCloudVaultUI();
-    updateHeaderStatusBadge();
-    showToast('Signed out of Cloud Vault');
-  });
-
-  // Master Encryption Password Unlock
-  document.getElementById('btn-set-master-key')?.addEventListener('click', async () => {
-    const input = document.getElementById('input-master-password') as HTMLInputElement;
-    const pwd = input?.value;
-    if (!pwd) {
-      showToast('Please enter master decryption password');
-      return;
-    }
-
-    showToast('Deriving AES-256 key via PBKDF2 (100k rounds)...');
-    const res = await sendRuntimeMessage({
-      type: 'SET_MASTER_KEY',
-      payload: { password: pwd },
-    });
-
-    if (res.success) {
-      state.syncState.hasMasterKey = true;
-      renderCloudVaultUI();
-      input.value = '';
-      showToast('Zero-knowledge master key unlocked in memory!');
-    }
-  });
-
-  // Trigger Cloud Sync
-  document.getElementById('btn-trigger-cloud-sync')?.addEventListener('click', async () => {
-    showToast('Syncing encrypted payloads to Supabase...');
-    const res = await sendRuntimeMessage({ type: 'TRIGGER_FLUSH' });
-    if (res.success) {
-      updateHeaderStatusBadge();
-      showToast('Cloud vault synchronized!');
     }
   });
 
@@ -1121,37 +918,6 @@ function setupEventListeners() {
     }
   });
 
-  // Save Cloud Endpoint Config
-  document.getElementById('btn-save-cloud-config')?.addEventListener('click', async () => {
-    const urlInput = document.getElementById('input-cloud-url') as HTMLInputElement;
-    const keyInput = document.getElementById('input-cloud-key') as HTMLInputElement;
-    const url = urlInput?.value?.trim();
-    const key = keyInput?.value?.trim();
-
-    if (!url || !key) {
-      showToast('Please enter both Supabase URL and Anon Key');
-      return;
-    }
-
-    const res = await sendRuntimeMessage({
-      type: 'SET_CLOUD_CONFIG',
-      payload: { supabaseUrl: url, supabaseAnonKey: key },
-    });
-
-    if (res.success) {
-      showToast('Cloud Vault endpoint saved!');
-      const badge = document.getElementById('badge-cloud-status');
-      const text = document.getElementById('text-cloud-status');
-      if (badge && text) {
-        badge.className =
-          'px-2 py-0.5 rounded text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center space-x-1';
-        text.textContent = 'Endpoint Active';
-      }
-    } else {
-      showToast(res.error || 'Failed to save cloud config');
-    }
-  });
-
   // Danger Zone: Clear Keys & Disconnect
   document.getElementById('btn-purge-cache')?.addEventListener('click', async () => {
     if (confirm('Clear local cryptographic session key and disconnect all P2P peers?')) {
@@ -1159,7 +925,6 @@ function setupEventListeners() {
       await sendRuntimeMessage({ type: 'P2P_DISCONNECT' });
       state.syncState.hasMasterKey = false;
       state.syncState.p2pConnectedPeers = 0;
-      renderCloudVaultUI();
       renderP2PRoster();
       updateHeaderStatusBadge();
       showToast('Keys cleared from memory & peers disconnected');
@@ -1208,7 +973,6 @@ async function init() {
   setupEventListeners();
   updateHeaderStatusBadge();
   renderP2PRoster();
-  renderCloudVaultUI();
   renderExtensionsGallery();
   renderHistoryViewer();
   renderSettings();

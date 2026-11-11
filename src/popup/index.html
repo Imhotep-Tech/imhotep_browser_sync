@@ -43,19 +43,6 @@
           <span id="status-text">P2P Active</span>
         </div>
 
-        <!-- Mode Toggle Button (P2P vs Cloud) -->
-        <button id="btn-toggle-sync-mode" title="Switch Sync Mode (P2P / Cloud)" class="btn-tactile p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 hover:text-amber-400">
-          <svg id="icon-mode-p2p" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-            <line x1="12" y1="20" x2="12.01" y2="20"/>
-          </svg>
-          <svg id="icon-mode-cloud" class="w-3.5 h-3.5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
-          </svg>
-        </button>
-
         <!-- Dark / Light Theme Toggle -->
         <button id="btn-theme-toggle" title="Toggle Dark/Light Mode" class="btn-tactile p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 hover:text-amber-400">
           <!-- Sun Icon (shown in dark mode) -->
@@ -78,7 +65,7 @@
       </div>
     </header>
 
-    <!-- Navigation Tabs (Segmented Control) -->
+    <!-- Navigation Tabs (Segmented Control - 4 Pure P2P Tabs) -->
     <nav class="flex border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-md px-1 pt-1 space-x-1 text-slate-400 select-none">
       <button data-tab="p2p" class="tab-btn flex-1 py-2 text-center text-[11px] font-medium border-b-2 border-amber-400 text-amber-400 flex flex-col items-center justify-center space-y-0.5 transition-colors">
         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -87,13 +74,6 @@
           <path d="M6 12a6 6 0 0 1 6-6 6 6 0 0 1 6 6"/>
         </svg>
         <span>P2P Hub</span>
-      </button>
-
-      <button data-tab="cloud" class="tab-btn flex-1 py-2 text-center text-[11px] font-medium border-b-2 border-transparent hover:text-slate-200 flex flex-col items-center justify-center space-y-0.5 transition-colors">
-        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
-        </svg>
-        <span>Cloud Vault</span>
       </button>
 
       <button data-tab="extensions" class="tab-btn flex-1 py-2 text-center text-[11px] font-medium border-b-2 border-transparent hover:text-slate-200 flex flex-col items-center justify-center space-y-0.5 transition-colors relative">
@@ -125,7 +105,7 @@
     <!-- Main Scrollable Views Content -->
     <main class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
 
-      <!-- Onboarding / Welcome Banner (Dismissible, P2P Default highlight) -->
+      <!-- Onboarding / Welcome Banner (Dismissible, 100% P2P highlight) -->
       <div id="onboarding-banner" class="glass-panel p-3.5 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/20 via-slate-900/60 to-cyan-950/20 relative">
         <button id="btn-close-onboarding" class="absolute top-2.5 right-2.5 text-slate-400 hover:text-slate-100 p-1">
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -140,16 +120,13 @@
             </svg>
           </div>
           <div>
-            <h3 class="text-xs font-semibold text-amber-300">Direct P2P is Active by Default</h3>
+            <h3 class="text-xs font-semibold text-amber-300">100% Peer-to-Peer Browser Sync</h3>
             <p class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
-              Instant, decentralized sync over direct WebRTC DataChannels. <strong>No account or cloud server required.</strong>
+              Instant device-to-device streaming over direct WebRTC DataChannels. <strong>Zero servers, zero accounts, zero telemetry footprint.</strong>
             </p>
-            <div class="flex items-center space-x-2 mt-2">
-              <button id="btn-onboarding-p2p" class="btn-tactile px-2.5 py-1 text-[10px] font-semibold rounded bg-amber-500 hover:bg-amber-400 text-slate-950">
-                Pair Another Device
-              </button>
-              <button id="btn-onboarding-cloud" class="btn-tactile px-2 py-1 text-[10px] font-medium rounded text-cyan-300 hover:text-cyan-200 underline">
-                Want Cloud Vault instead?
+            <div class="mt-2">
+              <button id="btn-onboarding-p2p" class="btn-tactile px-3 py-1 text-[10px] font-semibold rounded bg-amber-500 hover:bg-amber-400 text-slate-950">
+                Pair Another Device Now
               </button>
             </div>
           </div>
@@ -284,120 +261,7 @@
       </section>
 
       <!-- ===================================================================== -->
-      <!-- VIEW 2: CLOUD VAULT HUB -->
-      <!-- ===================================================================== -->
-      <section id="view-cloud" class="view-panel space-y-3 hidden">
-        <!-- Zero-Knowledge Security Callout -->
-        <div class="p-2.5 rounded-xl bg-cyan-950/30 border border-cyan-800/50 flex items-center space-x-2 text-cyan-300 text-[11px]">
-          <svg class="w-4 h-4 flex-shrink-0 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-          <span>End-to-End Encrypted via PBKDF2 (100k rounds) & AES-256-GCM. Supabase stores zero plaintext.</span>
-        </div>
-
-        <!-- Auth Status Container (Signed Out State) -->
-        <div id="cloud-auth-signed-out" class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-3">
-          <div class="flex border-b border-slate-800 text-[11px] font-medium pb-2 space-x-4">
-            <button id="auth-subtab-signin" class="text-amber-400 font-bold border-b-2 border-amber-400 pb-1">
-              Sign In to Cloud Vault
-            </button>
-            <button id="auth-subtab-signup" class="text-slate-400 hover:text-slate-200 pb-1">
-              Create New Vault Account
-            </button>
-          </div>
-
-          <div class="space-y-2">
-            <div>
-              <label class="block text-[10px] uppercase font-mono text-slate-400 mb-1">Email</label>
-              <input type="email" id="cloud-email" placeholder="user@imhotep.tech" class="w-full text-xs p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-400">
-            </div>
-            <div>
-              <label class="block text-[10px] uppercase font-mono text-slate-400 mb-1">Account Password</label>
-              <input type="password" id="cloud-password" placeholder="••••••••••••" class="w-full text-xs p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-400">
-            </div>
-            <button id="btn-cloud-auth-action" class="btn-tactile w-full py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-bold text-xs mt-2 shadow-lg shadow-cyan-500/20">
-              Sign In to Cloud Vault
-            </button>
-          </div>
-        </div>
-
-        <!-- Auth Status Container (Signed In State) -->
-        <div id="cloud-auth-signed-in" class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-2.5 hidden">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-              <div class="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold text-xs">
-                @
-              </div>
-              <div>
-                <div id="cloud-user-email" class="text-xs font-semibold text-slate-100">user@domain.com</div>
-                <div class="text-[10px] text-slate-400 flex items-center space-x-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  <span>Supabase Realtime Channel Active</span>
-                </div>
-              </div>
-            </div>
-            <button id="btn-cloud-sign-out" class="btn-tactile px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700">
-              Sign Out
-            </button>
-          </div>
-
-          <!-- Retention Badge -->
-          <div class="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-[10px]">
-            <span class="text-slate-400">Cloud Retention Policy:</span>
-            <span class="text-amber-400 font-mono font-medium">90-Day Rolling Vault</span>
-          </div>
-        </div>
-
-        <!-- Master Password / Zero-Knowledge Encryption Key Card -->
-        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-2.5">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-              <div class="w-6 h-6 rounded-md bg-amber-500/20 text-amber-400 flex items-center justify-center">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 2l-2 2m-2-2l2 2"/>
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-              </div>
-              <span class="text-xs font-semibold text-slate-200">Zero-Knowledge Master Key</span>
-            </div>
-            <span id="master-key-status-badge" class="text-[10px] px-2 py-0.5 rounded font-mono bg-emerald-950 text-emerald-400 border border-emerald-800">
-              Unlocked
-            </span>
-          </div>
-
-          <p class="text-[11px] text-slate-400 leading-tight">
-            Your master password derives your local AES-256 encryption key. It is never transmitted across the network.
-          </p>
-
-          <div class="flex space-x-2">
-            <input type="password" id="input-master-password" placeholder="Enter master decryption password" class="flex-1 text-xs p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-400">
-            <button id="btn-set-master-key" class="btn-tactile px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex-shrink-0">
-              Unlock
-            </button>
-          </div>
-        </div>
-
-        <!-- Cloud Sync Controls -->
-        <div class="glass-panel p-3 rounded-xl border border-slate-800 flex items-center justify-between">
-          <div>
-            <div class="text-[10px] text-slate-400 font-mono">Realtime Backup</div>
-            <div class="text-xs font-semibold text-slate-200">Continuous Sync</div>
-          </div>
-          <button id="btn-trigger-cloud-sync" class="btn-tactile px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1 shadow-md shadow-cyan-500/20">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="23 4 23 10 17 10"/>
-              <polyline points="1 20 1 14 7 14"/>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-            </svg>
-            <span>Sync Cloud Vault</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- ===================================================================== -->
-      <!-- VIEW 3: EXTENSIONS & 1-CLICK REINSTALL GALLERY -->
+      <!-- VIEW 2: EXTENSIONS & 1-CLICK REINSTALL GALLERY -->
       <!-- ===================================================================== -->
       <section id="view-extensions" class="view-panel space-y-3 hidden">
         <!-- Search & Filter Controls -->
@@ -512,30 +376,6 @@
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Cloud Vault Backend Endpoint Status Card -->
-        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-2.5">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-bold text-slate-200">Cloud Vault Endpoint</h3>
-            <span id="badge-cloud-status" class="px-2 py-0.5 rounded text-[9px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center space-x-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-              <span id="text-cloud-status">Configured via Storage</span>
-            </span>
-          </div>
-          <div class="space-y-2 text-[10px] font-mono">
-            <div>
-              <label class="block text-slate-400 mb-1">Supabase URL</label>
-              <input type="text" id="input-cloud-url" placeholder="https://your-project.supabase.co" class="w-full text-xs p-1.5 rounded bg-slate-950/80 border border-slate-800 text-slate-100 font-mono focus:outline-none focus:border-cyan-400">
-            </div>
-            <div>
-              <label class="block text-slate-400 mb-1">Supabase Anon Key</label>
-              <input type="password" id="input-cloud-key" placeholder="eyJhbGciOi..." class="w-full text-xs p-1.5 rounded bg-slate-950/80 border border-slate-800 text-slate-100 font-mono focus:outline-none focus:border-cyan-400">
-            </div>
-            <button id="btn-save-cloud-config" class="btn-tactile w-full py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs">
-              Save Cloud Endpoint
-            </button>
           </div>
         </div>
 

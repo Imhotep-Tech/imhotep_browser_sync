@@ -1,30 +1,19 @@
 /**
  * Imhotep Browser Sync - Types & Interfaces
- * Unified type definitions for Cloud Vault (Supabase), MV3 Service Worker,
- * P2P DataChannels, and Zero-Knowledge End-to-End Encryption.
+ * Pure 100% Peer-to-Peer (P2P) WebRTC DataChannels & Zero-Knowledge E2EE.
  */
 
 // ============================================================================
-// 1. Device & Profile Types
+// 1. Device Types
 // ============================================================================
 
 export type DeviceType = 'desktop' | 'mobile_android' | 'tablet';
 
 export interface DeviceRecord {
   id: string; // UUID
-  user_id: string; // UUID (references auth.users)
   device_name: string;
   device_type: DeviceType;
   last_seen: string; // ISO 8601
-  created_at?: string; // ISO 8601
-}
-
-export interface UserProfileRecord {
-  user_id: string; // UUID
-  salt: string; // Base64 or Hex encoded salt for PBKDF2
-  device_count: number;
-  created_at?: string;
-  updated_at?: string;
 }
 
 // ============================================================================
@@ -50,16 +39,6 @@ export interface EncryptedPayloadBundle {
   version?: number; // Payload format version (default: 1)
 }
 
-export interface HistorySyncRecord {
-  id?: string; // UUID
-  user_id: string; // UUID
-  device_id?: string | null;
-  encrypted_payload: string; // AES-256-GCM ciphertext (Base64)
-  payload_iv: string; // IV (Base64)
-  visit_timestamp: string; // ISO 8601 timestamp
-  created_at?: string;
-}
-
 // ============================================================================
 // 3. Extension Inventory & Sync Types
 // ============================================================================
@@ -75,6 +54,7 @@ export interface ExtensionItem {
   installType?: string; // 'normal', 'development', 'sideload', etc.
   storeUrl: string; // Canonical Web Store link
   webstoreUrl?: string;
+  isRemote?: boolean;
 }
 
 export interface ExtensionSyncPayload {
@@ -84,28 +64,12 @@ export interface ExtensionSyncPayload {
   extensions: ExtensionItem[];
 }
 
-export interface ExtensionSyncRecord {
-  id?: string; // UUID
-  user_id: string; // UUID
-  device_id: string; // UUID
-  encrypted_payload: string; // AES-256-GCM ciphertext (Base64)
-  payload_iv: string; // IV (Base64)
-  updated_at?: string;
-}
-
 // ============================================================================
 // 4. State & Configuration Types
 // ============================================================================
 
-export type SyncMode = 'p2p' | 'cloud' | 'offline';
-
+export type SyncMode = 'p2p' | 'offline';
 export type SyncStatus = 'idle' | 'syncing' | 'connected' | 'error' | 'unpaired';
-
-export interface CloudConfig {
-  supabaseUrl: string;
-  supabaseAnonKey: string;
-  enabled: boolean;
-}
 
 export interface SyncState {
   mode: SyncMode;
@@ -116,8 +80,6 @@ export interface SyncState {
   lastSyncTime?: number;
   bufferedCount: number;
   totalSyncedCount: number;
-  isCloudAuthenticated: boolean;
-  userEmail?: string | null;
   p2pConnectedPeers: number;
   lastError?: string | null;
   hasMasterKey: boolean;
@@ -131,20 +93,13 @@ export interface FilterRule {
 }
 
 // ============================================================================
-// 5. Message Passing Interface (Popup <-> Service Worker <-> Offscreen)
+// 5. Message Passing Interface (Popup <-> Service Worker)
 // ============================================================================
 
 export type BackgroundMessageType =
   | 'PING'
   | 'GET_STATUS'
-  | 'SET_SYNC_MODE'
   | 'SET_DEVICE_NAME'
-  | 'SET_CLOUD_CONFIG'
-  | 'GET_CLOUD_CONFIG'
-  | 'AUTH_SIGN_IN'
-  | 'AUTH_SIGN_UP'
-  | 'AUTH_SIGN_OUT'
-  | 'AUTH_GET_SESSION'
   | 'SET_MASTER_KEY'
   | 'CLEAR_MASTER_KEY'
   | 'TRIGGER_FLUSH'

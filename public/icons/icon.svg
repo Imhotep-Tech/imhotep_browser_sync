@@ -82,7 +82,7 @@
   <line x1="36" y1="256" x2="60" y2="256" stroke="#06B6D4" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
   <line x1="452" y1="256" x2="476" y2="256" stroke="#06B6D4" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
 
-  <!-- Orbital Sync Rings (Dual Engine: WebRTC P2P & Supabase Cloud Vault) -->
+  <!-- Orbital Sync Rings (WebRTC P2P DataChannels) -->
   <path d="M 88,256 A 168,168 0 1,1 424,256" fill="none" stroke="url(#orbital-cyan)" stroke-width="4.5" stroke-linecap="round" filter="url(#glow-cyan)"/>
   <path d="M 424,256 A 168,168 0 0,1 128,376" fill="none" stroke="url(#orbital-gold)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="240, 20" filter="url(#glow-gold)"/>
 
@@ -129,7 +129,7 @@
   <circle cx="96" cy="230" r="4" fill="#FFFFFF"/>
   <line x1="180" y1="260" x2="102" y2="232" stroke="#06B6D4" stroke-width="1.5" stroke-dasharray="3,3" stroke-opacity="0.6"/>
 
-  <!-- Node Gamma (Bottom Right - Cloud Vault Hub) -->
+  <!-- Node Gamma (Bottom Right - Secondary Peer) -->
   <circle cx="372" cy="358" r="7" fill="#22D3EE" filter="url(#glow-cyan)"/>
   <circle cx="372" cy="358" r="3.5" fill="#FFFFFF"/>
   <line x1="332" y1="334" x2="368" y2="354" stroke="#22D3EE" stroke-width="1.5" stroke-dasharray="3,3" stroke-opacity="0.5"/>

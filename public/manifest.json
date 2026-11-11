@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Imhotep Browser Sync",
   "version": "1.0.0",
-  "description": "Encrypted, decentralized cross-browser sync for tabs, history, and extensions with P2P and Cloud fallback.",
+  "description": "Zero-knowledge decentralized P2P browser sync for history and extensions across Chromium browsers.",
   "permissions": [
     "history",
     "storage",
@@ -10,9 +10,6 @@
     "alarms",
     "notifications",
     "unlimitedStorage"
-  ],
-  "host_permissions": [
-    "https://*.supabase.co/*"
   ],
   "background": {
     "service_worker": "service-worker.js",

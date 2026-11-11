@@ -1,7 +1,7 @@
 {
   "name": "imhotep-browser-sync",
   "version": "1.0.0",
-  "description": "Encrypted, decentralized cross-browser sync for tabs, history, and extensions with P2P and Cloud fallback.",
+  "description": "Encrypted, decentralized cross-browser sync for history and extensions powered 100% by P2P WebRTC.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,6 @@
     "package": "npm run build && node scripts/package.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.1",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

@@ -63,7 +63,6 @@ Before writing code, please review the domain boundaries:
 
 * `src/crypto/`: Zero-knowledge cryptography only. Use native `crypto.subtle` APIs exclusively. Never export derived keys or store plaintext in unencrypted storage.
 * `src/p2p/`: WebRTC DataChannel protocols, STUN traversal, pairing logic (mnemonic phrase & QR generation).
-* `src/cloud/`: Supabase PostgreSQL client, Realtime subscriptions, and auth integration.
 * `src/background/`: Chrome Manifest V3 service worker lifecycle, history listener hooks, micro-batch debounce buffers, and extension management.
 * `src/popup/`: Glassmorphic Antigravity UI built with pure TypeScript and Tailwind CSS.
 * `public/icons/`: High-resolution vector and raster branding assets.

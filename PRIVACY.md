@@ -3,16 +3,16 @@
 **Effective Date**: November 2026  
 **Publisher**: Imhotep Tech (Open-Source Project)
 
-Imhotep Browser Sync is built on an uncompromising principle: **your browsing activity belongs solely to you**. We believe true digital privacy requires mathematical certainty, not just policy promises.
+Imhotep Browser Sync is built on an uncompromising principle: **your browsing activity belongs solely to you**. We believe true digital privacy requires structural certainty: removing servers entirely.
 
 ---
 
 ## 1. Core Privacy Tenets
 
-* **Zero Tracking & Zero Telemetry**: We do not collect analytics, telemetry metrics, session recordings, IP logs, or diagnostic reports. We do not embed Google Analytics, Sentry, Mixpanel, Segment, or any remote tracking SDK.
-* **No Advertisements or Data Monetization**: We will never sell, rent, monetize, or broker your browsing habits or extension inventory to data brokers, advertisers, or artificial intelligence training crawlers.
-* **Client-Side Zero-Knowledge**: All synchronizable records (history URLs, timestamps, titles, installed extensions) are encrypted on your local machine using PBKDF2-derived AES-256-GCM encryption before transmission.
-* **No Plaintext Remote Storage**: Neither Imhotep Tech, Supabase, nor any network intermediary possesses the mathematical ability to inspect your synchronized records.
+* **100% Peer-to-Peer**: All data exchange occurs directly device-to-device. No central server ever receives, relays, processes, or stores your browsing history or extensions.
+* **Zero Tracking & Zero Telemetry**: We do not collect analytics, telemetry metrics, session recordings, IP logs, or crash reports. We do not embed Google Analytics, Sentry, Mixpanel, or any tracking SDK.
+* **No Advertisements or Data Monetization**: We will never sell, rent, monetize, or broker your browsing data to data brokers, advertisers, or third parties.
+* **Zero Account Requirement**: No email, no password, no phone number, and no user profile are required to use the extension.
 
 ---
 
@@ -27,31 +27,23 @@ Our background service worker automatically discards and prevents synchronizatio
 * **Incognito & Private Windows**: Any navigation occurring within an Incognito context is immediately ignored.
 * **Internal Browser Schemes**: `chrome://`, `chrome-extension://`, `edge://`, `brave://`, `about:`, and `view-source:`.
 * **Localhost & Intranet Addresses**: `http://localhost`, `http://127.0.0.1`, `http://[::1]`, and private RFC1918 subnets.
-* **Form Inputs, Passwords & Cookies**: Imhotep does not inspect keystrokes, form submissions, session tokens, or cookie jars.
+* **Form Inputs, Passwords & Cookies**: Imhotep does not inspect keystrokes, form submissions, session tokens, or cookies.
 
 ---
 
-## 3. Storage & Transmission Modes
+## 3. Data Transmission & Retention
 
-### Mode A: Direct P2P WebRTC (Default Mode)
-* Devices communicate directly over an encrypted peer-to-peer DataChannel (`DTLS-SRTP`).
-* No central server stores your data at any time.
-* Standard public STUN servers are used solely to establish peer ICE candidates; no payload traverses STUN.
-
-### Mode B: Cloud Vault (Supabase Backend)
-* When you opt into Cloud Vault synchronization for multi-device disaster recovery, your encrypted ciphertext is synchronized through a PostgreSQL database hosted on Supabase with strict Row-Level Security (RLS).
-* Only your authenticated account can retrieve your encrypted rows.
-* Rows contain solely random IVs and encrypted binary blobs.
-* Default retention policy: Rolling 90-day automated purge keeps your cloud footprint lightweight and ephemeral.
+* **Transmission**: Sync data is transmitted directly peer-to-peer across your paired devices over encrypted WebRTC DataChannels (`DTLS-SRTP`).
+* **STUN Signaling**: Standard public STUN servers are used solely for ICE candidate address discovery (NAT traversal). No sync payload ever passes through STUN.
+* **Retention**: Ephemeral. There is no remote database. Data exists only on your local devices in your browser's native history and extension storage.
 
 ---
 
 ## 4. User Rights & Data Autonomy
 
 You maintain complete sovereignty over your data:
-1. **Instant Purge**: You can wipe all remote vault records at any time with a single click inside the popup settings.
-2. **Key Invalidation**: Changing your master password immediately renders previously stored cloud payloads cryptographically undecryptable.
-3. **Local Removal**: Uninstalling the extension removes all local caching, keys, and settings from `chrome.storage.local`.
+1. **Instant Disconnect**: You can disconnect all peers and clear local session state with a single click inside the popup settings.
+2. **Local Removal**: Uninstalling the extension completely removes all extension cache and settings from `chrome.storage.local`.
 
 ---
 
