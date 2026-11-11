@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Imhotep Browser Sync</title>
+  <link rel="stylesheet" href="./popup.css">
+</head>
+<body class="bg-[#070a13] text-slate-100 dark:bg-[#070a13] dark:text-slate-100 antialiased selection:bg-amber-500/30 selection:text-amber-200">
+  <!-- Outer Extension Container (Fixed 400px width for desktop popup, 100% on mobile) -->
+  <div id="app-container" class="w-full sm:w-[400px] min-h-[580px] max-h-[600px] flex flex-col mx-auto overflow-hidden relative shadow-2xl border-x border-slate-800/40">
+
+    <!-- Top Glow Accent Line (Egyptian Telemetry Cyan/Gold Gradient) -->
+    <div class="h-1 w-full bg-gradient-to-r from-cyan-500 via-amber-400 to-amber-600"></div>
+
+    <!-- Antigravity Header -->
+    <header class="glass-panel px-4 py-3 flex items-center justify-between border-b border-slate-800/60 sticky top-0 z-30">
+      <div class="flex items-center space-x-2.5">
+        <!-- Brand Icon: Cyber-Egyptian Telemetry Pyramid -->
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-cyan-500/20 border border-amber-500/40 flex items-center justify-center p-1 relative shadow-inner">
+          <svg class="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 22 22 22" fill="rgba(245, 158, 11, 0.15)"/>
+            <circle cx="12" cy="14" r="3" stroke="#22d3ee" stroke-width="2"/>
+            <line x1="12" y1="2" x2="12" y2="11" stroke="#fbbf24"/>
+            <line x1="2" y1="22" x2="12" y2="14" stroke="#22d3ee" stroke-dasharray="2 2"/>
+            <line x1="22" y1="22" x2="12" y2="14" stroke="#22d3ee" stroke-dasharray="2 2"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <h1 class="text-xs font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-cyan-300 uppercase font-mono">IMHOTEP</h1>
+            <span class="text-[9px] px-1.5 py-0.2 rounded font-mono font-semibold bg-cyan-950/80 text-cyan-300 border border-cyan-800/60">E2EE</span>
+          </div>
+          <p class="text-[10px] text-slate-400 tracking-tight">Decentralized Browser Sync</p>
+        </div>
+      </div>
+
+      <!-- Header Controls: Mode Status Pill, Sync Mode Switcher, Dark/Light Toggle -->
+      <div class="flex items-center space-x-1.5">
+        <!-- Live Status Badge -->
+        <div id="status-badge" class="flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
+          <span id="status-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-glow"></span>
+          <span id="status-text">P2P Active</span>
+        </div>
+
+        <!-- Mode Toggle Button (P2P vs Cloud) -->
+        <button id="btn-toggle-sync-mode" title="Switch Sync Mode (P2P / Cloud)" class="btn-tactile p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 hover:text-amber-400">
+          <svg id="icon-mode-p2p" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <line x1="12" y1="20" x2="12.01" y2="20"/>
+          </svg>
+          <svg id="icon-mode-cloud" class="w-3.5 h-3.5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+          </svg>
+        </button>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button id="btn-theme-toggle" title="Toggle Dark/Light Mode" class="btn-tactile p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 hover:text-amber-400">
+          <!-- Sun Icon (shown in dark mode) -->
+          <svg id="theme-icon-sun" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <!-- Moon Icon (shown in light mode) -->
+          <svg id="theme-icon-moon" class="w-3.5 h-3.5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs (Segmented Control) -->
+    <nav class="flex border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-md px-1 pt-1 space-x-1 text-slate-400 select-none">
+      <button data-tab="p2p" class="tab-btn flex-1 py-2 text-center text-[11px] font-medium border-b-2 border-amber-400 text-amber-400 flex flex-col items-center justify-center space-y-0.5 transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 9 9"/>
+          <path d="M6 12a6 6 0 0 1 6-6 6 6 0 0 1 6 6"/>
+        </svg>
+        <span>P2P Hub</span>
+      </button>
+
+      <button data-tab="cloud" class="tab-btn flex-1 py-2 text-center text-[11px] font-medium border-b-2 border-transparent hover:text-slate-200 flex flex-col items-center justify-center space-y-0.5 transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+        </svg>
+        <span>Cloud Vault</span>
+      </button>
+
+      <button data-tab="extensions" class="tab-btn flex-1 py-2 text-center text-[11px] font-medium border-b-2 border-transparent hover:text-slate-200 flex flex-col items-center justify-center space-y-0.5 transition-colors relative">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+        <span>Extensions</span>
+        <span id="tab-ext-count" class="hidden absolute top-1 right-2 text-[9px] px-1 rounded-full bg-cyan-900 text-cyan-300 font-mono">0</span>
+      </button>
+
+      <button data-tab="history" class="tab-btn flex-1 py-2 text-center text-[11px] font-medium border-b-2 border-transparent hover:text-slate-200 flex flex-col items-center justify-center space-y-0.5 transition-colors relative">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span>History</span>
+        <span id="tab-hist-count" class="hidden absolute top-1 right-2 text-[9px] px-1 rounded-full bg-amber-900 text-amber-300 font-mono">0</span>
+      </button>
+
+      <button data-tab="settings" class="tab-btn flex-1 py-2 text-center text-[11px] font-medium border-b-2 border-transparent hover:text-slate-200 flex flex-col items-center justify-center space-y-0.5 transition-colors">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- Main Scrollable Views Content -->
+    <main class="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+
+      <!-- Onboarding / Welcome Banner (Dismissible, P2P Default highlight) -->
+      <div id="onboarding-banner" class="glass-panel p-3.5 rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/20 via-slate-900/60 to-cyan-950/20 relative">
+        <button id="btn-close-onboarding" class="absolute top-2.5 right-2.5 text-slate-400 hover:text-slate-100 p-1">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        <div class="flex items-start space-x-3">
+          <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center justify-center flex-shrink-0 text-amber-400">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-xs font-semibold text-amber-300">Direct P2P is Active by Default</h3>
+            <p class="text-[11px] text-slate-300 mt-0.5 leading-relaxed">
+              Instant, decentralized sync over direct WebRTC DataChannels. <strong>No account or cloud server required.</strong>
+            </p>
+            <div class="flex items-center space-x-2 mt-2">
+              <button id="btn-onboarding-p2p" class="btn-tactile px-2.5 py-1 text-[10px] font-semibold rounded bg-amber-500 hover:bg-amber-400 text-slate-950">
+                Pair Another Device
+              </button>
+              <button id="btn-onboarding-cloud" class="btn-tactile px-2 py-1 text-[10px] font-medium rounded text-cyan-300 hover:text-cyan-200 underline">
+                Want Cloud Vault instead?
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 1: DIRECT P2P HUB -->
+      <!-- ===================================================================== -->
+      <section id="view-p2p" class="view-panel space-y-3">
+        <!-- P2P Live Telemetry Card -->
+        <div class="glass-panel p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <div class="text-[10px] uppercase font-mono text-slate-400">P2P Network Status</div>
+            <div class="flex items-center space-x-2 mt-0.5">
+              <span id="p2p-connection-indicator" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span id="p2p-connection-text" class="text-xs font-bold text-slate-100">Direct P2P Ready</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] uppercase font-mono text-slate-400">Connected Peers</div>
+            <div id="p2p-peer-count" class="text-xs font-mono font-bold text-amber-400">0 Peers</div>
+          </div>
+          <button id="btn-p2p-sync-now" class="btn-tactile px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center space-x-1 shadow-lg shadow-amber-500/20">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span>Sync Now</span>
+          </button>
+        </div>
+
+        <!-- Pairing Mode Segment (Share QR / Code vs Connect to Peer) -->
+        <div class="glass-panel rounded-xl border border-slate-800 overflow-hidden">
+          <div class="flex border-b border-slate-800 text-[11px] font-medium bg-slate-900/40">
+            <button id="p2p-subtab-share" class="flex-1 py-1.5 text-center text-amber-400 border-b border-amber-400 font-semibold">
+              Share QR / Mnemonic
+            </button>
+            <button id="p2p-subtab-connect" class="flex-1 py-1.5 text-center text-slate-400 hover:text-slate-200">
+              Connect to Peer
+            </button>
+          </div>
+
+          <!-- Subtab 1: Share QR & 12-Word Phrase -->
+          <div id="p2p-subpanel-share" class="p-3 space-y-3">
+            <!-- QR Code Canvas Container -->
+            <div class="flex flex-col items-center justify-center bg-slate-950/80 p-3 rounded-lg border border-slate-800/80 relative">
+              <div id="qr-loading" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center text-xs text-amber-400 font-mono">
+                Generating Ephemeral QR...
+              </div>
+              <canvas id="p2p-qr-canvas" class="w-44 h-44 rounded bg-white p-1.5 shadow-md"></canvas>
+              <div class="mt-2 text-[10px] text-slate-400 text-center font-mono flex items-center space-x-1.5">
+                <span>Fingerprint:</span>
+                <span id="p2p-pairing-fingerprint" class="font-bold text-amber-400 tracking-wider">IMH-9X4-K28</span>
+              </div>
+            </div>
+
+            <!-- 12-Word BIP-39 Mnemonic Phrase Grid -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[11px] font-medium text-slate-300">12-Word Pairing Phrase:</span>
+                <button id="btn-copy-mnemonic" class="btn-tactile text-[10px] text-amber-400 hover:text-amber-300 flex items-center space-x-1 font-mono">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <span id="copy-mnemonic-label">Copy All</span>
+                </button>
+              </div>
+
+              <div id="mnemonic-grid" class="grid grid-cols-3 gap-1.5 p-2 bg-slate-950/60 rounded-lg border border-slate-800 text-[10px] font-mono">
+                <!-- Dynamically populated 12 words -->
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <button id="btn-regen-pairing" class="btn-tactile text-[10px] text-slate-400 hover:text-slate-200 flex items-center space-x-1">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span>Generate New Ephemeral Phrase</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Subtab 2: Connect to Peer -->
+          <div id="p2p-subpanel-connect" class="p-3 space-y-3 hidden">
+            <div>
+              <label class="block text-[11px] font-medium text-slate-300 mb-1">
+                Enter Peer Mnemonic Phrase or Pairing Ticket:
+              </label>
+              <textarea id="input-peer-signal" rows="3" placeholder="e.g. apple banana cherry dog elephant fox grape hawk item jazz kitten lion&#10;or paste IMH1:... signal ticket" class="w-full text-xs font-mono p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-400"></textarea>
+            </div>
+
+            <div class="flex space-x-2">
+              <button id="btn-scan-qr" class="btn-tactile flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center justify-center space-x-1 border border-slate-700">
+                <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span>Scan Camera QR</span>
+              </button>
+              <button id="btn-connect-peer" class="btn-tactile flex-1 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold flex items-center justify-center space-x-1 shadow-md shadow-amber-500/20">
+                <span>Pair & Connect</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connected Peers Roster -->
+        <div class="glass-panel p-3 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between text-[11px] font-medium text-slate-300">
+            <span>Known P2P Devices</span>
+            <span id="p2p-roster-count" class="text-[10px] text-slate-400 font-mono">0 Connected</span>
+          </div>
+
+          <div id="p2p-peers-list" class="space-y-1.5">
+            <!-- Populated dynamically -->
+            <div class="p-2 rounded-lg bg-slate-950/40 border border-slate-800/80 flex items-center justify-between text-xs">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <div>
+                  <div class="font-semibold text-slate-200">This Device (Local)</div>
+                  <div id="p2p-this-device-name" class="text-[10px] text-slate-400">Desktop Chrome</div>
+                </div>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">Active</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 2: CLOUD VAULT HUB -->
+      <!-- ===================================================================== -->
+      <section id="view-cloud" class="view-panel space-y-3 hidden">
+        <!-- Zero-Knowledge Security Callout -->
+        <div class="p-2.5 rounded-xl bg-cyan-950/30 border border-cyan-800/50 flex items-center space-x-2 text-cyan-300 text-[11px]">
+          <svg class="w-4 h-4 flex-shrink-0 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>End-to-End Encrypted via PBKDF2 (100k rounds) & AES-256-GCM. Supabase stores zero plaintext.</span>
+        </div>
+
+        <!-- Auth Status Container (Signed Out State) -->
+        <div id="cloud-auth-signed-out" class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex border-b border-slate-800 text-[11px] font-medium pb-2 space-x-4">
+            <button id="auth-subtab-signin" class="text-amber-400 font-bold border-b-2 border-amber-400 pb-1">
+              Sign In to Cloud Vault
+            </button>
+            <button id="auth-subtab-signup" class="text-slate-400 hover:text-slate-200 pb-1">
+              Create New Vault Account
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            <div>
+              <label class="block text-[10px] uppercase font-mono text-slate-400 mb-1">Email</label>
+              <input type="email" id="cloud-email" placeholder="user@imhotep.tech" class="w-full text-xs p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-400">
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-mono text-slate-400 mb-1">Account Password</label>
+              <input type="password" id="cloud-password" placeholder="••••••••••••" class="w-full text-xs p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-400">
+            </div>
+            <button id="btn-cloud-auth-action" class="btn-tactile w-full py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-bold text-xs mt-2 shadow-lg shadow-cyan-500/20">
+              Sign In to Cloud Vault
+            </button>
+          </div>
+        </div>
+
+        <!-- Auth Status Container (Signed In State) -->
+        <div id="cloud-auth-signed-in" class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-2.5 hidden">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <div class="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center font-bold text-xs">
+                @
+              </div>
+              <div>
+                <div id="cloud-user-email" class="text-xs font-semibold text-slate-100">user@domain.com</div>
+                <div class="text-[10px] text-slate-400 flex items-center space-x-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>Supabase Realtime Channel Active</span>
+                </div>
+              </div>
+            </div>
+            <button id="btn-cloud-sign-out" class="btn-tactile px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] border border-slate-700">
+              Sign Out
+            </button>
+          </div>
+
+          <!-- Retention Badge -->
+          <div class="p-2 rounded-lg bg-slate-950/60 border border-slate-800/80 flex items-center justify-between text-[10px]">
+            <span class="text-slate-400">Cloud Retention Policy:</span>
+            <span class="text-amber-400 font-mono font-medium">90-Day Rolling Vault</span>
+          </div>
+        </div>
+
+        <!-- Master Password / Zero-Knowledge Encryption Key Card -->
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <div class="w-6 h-6 rounded-md bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 2l-2 2m-2-2l2 2"/>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <span class="text-xs font-semibold text-slate-200">Zero-Knowledge Master Key</span>
+            </div>
+            <span id="master-key-status-badge" class="text-[10px] px-2 py-0.5 rounded font-mono bg-emerald-950 text-emerald-400 border border-emerald-800">
+              Unlocked
+            </span>
+          </div>
+
+          <p class="text-[11px] text-slate-400 leading-tight">
+            Your master password derives your local AES-256 encryption key. It is never transmitted across the network.
+          </p>
+
+          <div class="flex space-x-2">
+            <input type="password" id="input-master-password" placeholder="Enter master decryption password" class="flex-1 text-xs p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-400">
+            <button id="btn-set-master-key" class="btn-tactile px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex-shrink-0">
+              Unlock
+            </button>
+          </div>
+        </div>
+
+        <!-- Cloud Sync Controls -->
+        <div class="glass-panel p-3 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <div class="text-[10px] text-slate-400 font-mono">Realtime Backup</div>
+            <div class="text-xs font-semibold text-slate-200">Continuous Sync</div>
+          </div>
+          <button id="btn-trigger-cloud-sync" class="btn-tactile px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1 shadow-md shadow-cyan-500/20">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            <span>Sync Cloud Vault</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 3: EXTENSIONS & 1-CLICK REINSTALL GALLERY -->
+      <!-- ===================================================================== -->
+      <section id="view-extensions" class="view-panel space-y-3 hidden">
+        <!-- Search & Filter Controls -->
+        <div class="flex items-center space-x-2">
+          <div class="relative flex-1">
+            <input type="text" id="input-search-extensions" placeholder="Search extensions by name or ID..." class="w-full text-xs pl-8 pr-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400">
+            <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+          <button id="btn-sync-extensions" title="Sync Extensions Now" class="btn-tactile p-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Filter Chips: All, Installed, Remote (Available to Reinstall) -->
+        <div class="flex space-x-1.5 text-[10px] font-medium">
+          <button data-ext-filter="all" class="ext-filter-btn px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+            All (<span id="count-ext-all">0</span>)
+          </button>
+          <button data-ext-filter="remote" class="ext-filter-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700">
+            1-Click Reinstall (<span id="count-ext-remote">0</span>)
+          </button>
+          <button data-ext-filter="installed" class="ext-filter-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700">
+            Installed (<span id="count-ext-installed">0</span>)
+          </button>
+        </div>
+
+        <!-- Extensions Gallery Grid -->
+        <div id="extensions-list" class="space-y-2">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 4: DECRYPTED HISTORY VIEWER -->
+      <!-- ===================================================================== -->
+      <section id="view-history" class="view-panel space-y-3 hidden">
+        <!-- Search & Device Filter -->
+        <div class="flex items-center space-x-2">
+          <div class="relative flex-1">
+            <input type="text" id="input-search-history" placeholder="Search synced visits..." class="w-full text-xs pl-8 pr-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+            <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+          <button id="btn-sync-history" title="Sync History Now" class="btn-tactile p-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- History Items Feed -->
+        <div id="history-items-list" class="space-y-2">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- VIEW 5: SETTINGS & DIAGNOSTICS -->
+      <!-- ===================================================================== -->
+      <section id="view-settings" class="view-panel space-y-3 hidden">
+        <!-- Device Info Card -->
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+          <h3 class="text-xs font-bold text-slate-200">Device Identity</h3>
+          <div class="space-y-2">
+            <div>
+              <label class="block text-[10px] uppercase font-mono text-slate-400 mb-1">Device Name</label>
+              <div class="flex space-x-2">
+                <input type="text" id="input-device-name" value="Desktop Chrome" class="flex-1 text-xs p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-100 focus:outline-none focus:border-amber-400">
+                <button id="btn-save-device-name" class="btn-tactile px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs">
+                  Save
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] uppercase font-mono text-slate-400 mb-1">Device ID (UUID)</label>
+              <div class="text-[11px] font-mono text-slate-400 p-2 rounded bg-slate-950/60 border border-slate-800 break-all select-all flex items-center justify-between">
+                <span id="label-device-id">d8a9e4b1-8b83-4a18-97c2-9e9f9e1e3b52</span>
+                <button id="btn-copy-device-id" class="text-slate-400 hover:text-amber-400 ml-2">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Privacy & Exclusion Filter Info -->
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <h3 class="text-xs font-bold text-slate-200">Zero-Leakage Privacy Filters</h3>
+          <ul class="text-[11px] text-slate-400 space-y-1 list-disc list-inside">
+            <li>Excludes <code class="text-amber-400 font-mono">chrome://</code> and internal browser pages</li>
+            <li>Excludes local loopback (<code class="text-amber-400 font-mono">localhost</code>, <code class="text-amber-400 font-mono">127.0.0.1</code>)</li>
+            <li>Ignores incognito / private browsing completely</li>
+            <li>Micro-batch buffer flushes every 20s or 15 items</li>
+          </ul>
+        </div>
+
+        <!-- Local Cache & Reset -->
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-2">
+          <h3 class="text-xs font-bold text-rose-400">Danger Zone</h3>
+          <p class="text-[11px] text-slate-400 leading-tight">
+            Clear in-memory encryption keys and disconnect from active P2P peers.
+          </p>
+          <button id="btn-purge-cache" class="btn-tactile w-full py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900/60 border border-rose-800/60 text-rose-300 font-medium text-xs">
+            Clear Cryptographic Key & Disconnect
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Telemetry Footer -->
+    <footer class="px-4 py-2 border-t border-slate-800/60 bg-slate-950/80 backdrop-blur-md flex items-center justify-between text-[10px] text-slate-500 font-mono">
+      <div class="flex items-center space-x-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+        <span id="footer-buffer-count">0 items buffered</span>
+      </div>
+      <div>
+        <span>v1.0.0 • Imhotep Tech</span>
+      </div>
+    </footer>
+
+    <!-- Interactive Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-12 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 transform translate-y-8 opacity-0">
+      <div id="toast-content" class="px-3.5 py-1.5 rounded-full text-xs font-medium bg-slate-900/95 border border-amber-500/60 text-amber-300 shadow-2xl backdrop-blur-xl flex items-center space-x-1.5">
+        <span id="toast-text">Notification message</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Entry TypeScript Module -->
+  <script type="module" src="./popup.ts"></script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="imhotep-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="50%" stop-color="#0B132B"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+
+    <!-- Border Glow Gradient -->
+    <linearGradient id="border-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#3B82F6" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.8"/>
+    </linearGradient>
+
+    <!-- Gold Pyramidal Gradients -->
+    <linearGradient id="gold-tier-1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#B45309"/>
+      <stop offset="50%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#78350F"/>
+    </linearGradient>
+    <linearGradient id="gold-tier-2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D97706"/>
+      <stop offset="50%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#92400E"/>
+    </linearGradient>
+    <linearGradient id="gold-tier-3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="50%" stop-color="#FDE68A"/>
+      <stop offset="100%" stop-color="#B45309"/>
+    </linearGradient>
+    <linearGradient id="gold-apex" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="60%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#FFFFFF"/>
+    </linearGradient>
+
+    <!-- Cyan Telemetry Gradients -->
+    <linearGradient id="cyan-beam" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#06B6D4" stop-opacity="0"/>
+      <stop offset="40%" stop-color="#22D3EE" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#A5F3FC" stop-opacity="1"/>
+    </linearGradient>
+
+    <linearGradient id="orbital-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="70%" stop-color="#06B6D4"/>
+      <stop offset="100%" stop-color="#0891B2" stop-opacity="0.2"/>
+    </linearGradient>
+
+    <linearGradient id="orbital-gold" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="70%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706" stop-opacity="0.2"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="glow-gold" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Base Squircle -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#imhotep-bg)"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="none" stroke="url(#border-glow)" stroke-width="4"/>
+
+  <!-- Cybernetic Telemetry Rings -->
+  <circle cx="256" cy="256" r="212" fill="none" stroke="#06B6D4" stroke-opacity="0.12" stroke-width="1.5" stroke-dasharray="6,8"/>
+  <circle cx="256" cy="256" r="184" fill="none" stroke="#F59E0B" stroke-opacity="0.15" stroke-width="1" stroke-dasharray="12,12"/>
+  <circle cx="256" cy="256" r="136" fill="none" stroke="#22D3EE" stroke-opacity="0.1" stroke-width="1"/>
+
+  <!-- Cardinal Telemetry Crosshairs / Grid Alignment -->
+  <line x1="256" y1="36" x2="256" y2="60" stroke="#06B6D4" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="256" y1="452" x2="256" y2="476" stroke="#06B6D4" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="36" y1="256" x2="60" y2="256" stroke="#06B6D4" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+  <line x1="452" y1="256" x2="476" y2="256" stroke="#06B6D4" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Orbital Sync Rings (Dual Engine: WebRTC P2P & Supabase Cloud Vault) -->
+  <path d="M 88,256 A 168,168 0 1,1 424,256" fill="none" stroke="url(#orbital-cyan)" stroke-width="4.5" stroke-linecap="round" filter="url(#glow-cyan)"/>
+  <path d="M 424,256 A 168,168 0 0,1 128,376" fill="none" stroke="url(#orbital-gold)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="240, 20" filter="url(#glow-gold)"/>
+
+  <!-- Central E2EE Telemetry Light Pillar -->
+  <line x1="256" y1="390" x2="256" y2="120" stroke="url(#cyan-beam)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Step Pyramid of Imhotep (Architectural Geometry) -->
+  <!-- Base Tier (Foundation) -->
+  <polygon points="112,388 400,388 368,340 144,340" fill="url(#gold-tier-1)"/>
+  <polygon points="144,340 256,340 256,388 112,388" fill="#FFFFFF" fill-opacity="0.08"/>
+  <line x1="144" y1="340" x2="368" y2="340" stroke="#FDE68A" stroke-width="1.5" stroke-opacity="0.8"/>
+
+  <!-- Second Tier -->
+  <polygon points="152,334 360,334 332,286 180,286" fill="url(#gold-tier-2)"/>
+  <polygon points="180,286 256,286 256,334 152,334" fill="#FFFFFF" fill-opacity="0.08"/>
+  <line x1="180" y1="286" x2="332" y2="286" stroke="#FDE68A" stroke-width="1.5" stroke-opacity="0.9"/>
+
+  <!-- Third Tier -->
+  <polygon points="188,280 324,280 302,232 210,232" fill="url(#gold-tier-3)"/>
+  <polygon points="210,232 256,232 256,280 188,280" fill="#FFFFFF" fill-opacity="0.1"/>
+  <line x1="210" y1="232" x2="302" y2="232" stroke="#FEF08A" stroke-width="1.5"/>
+
+  <!-- Fourth Tier -->
+  <polygon points="218,226 294,226 278,184 234,184" fill="url(#gold-tier-2)"/>
+  <polygon points="234,184 256,184 256,226 218,226" fill="#FFFFFF" fill-opacity="0.12"/>
+  <line x1="234" y1="184" x2="278" y2="184" stroke="#FFFBEB" stroke-width="1.5"/>
+
+  <!-- Floating Pyramidion (Radiant Apex Capstone) -->
+  <polygon points="256,110 286,174 226,174" fill="url(#gold-apex)" filter="url(#glow-gold)"/>
+  <polygon points="226,174 256,110 256,174" fill="#FFFFFF" fill-opacity="0.25"/>
+
+  <!-- Zero-Knowledge Cryptographic Core (Floating in Apex) -->
+  <circle cx="256" cy="148" r="5" fill="#FFFFFF" filter="url(#glow-cyan)"/>
+  <circle cx="256" cy="148" r="2.5" fill="#06B6D4"/>
+
+  <!-- Orbital Data Sync Nodes (Endpoints & P2P Peers) -->
+  <!-- Node Alpha (Top Right - Desktop) -->
+  <circle cx="390" cy="170" r="8" fill="#F59E0B" filter="url(#glow-gold)"/>
+  <circle cx="390" cy="170" r="4" fill="#FFFFFF"/>
+  <line x1="286" y1="140" x2="384" y2="168" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="3,3" stroke-opacity="0.6"/>
+
+  <!-- Node Beta (Left - Android Kiwi/Lemur) -->
+  <circle cx="96" cy="230" r="8" fill="#06B6D4" filter="url(#glow-cyan)"/>
+  <circle cx="96" cy="230" r="4" fill="#FFFFFF"/>
+  <line x1="180" y1="260" x2="102" y2="232" stroke="#06B6D4" stroke-width="1.5" stroke-dasharray="3,3" stroke-opacity="0.6"/>
+
+  <!-- Node Gamma (Bottom Right - Cloud Vault Hub) -->
+  <circle cx="372" cy="358" r="7" fill="#22D3EE" filter="url(#glow-cyan)"/>
+  <circle cx="372" cy="358" r="3.5" fill="#FFFFFF"/>
+  <line x1="332" y1="334" x2="368" y2="354" stroke="#22D3EE" stroke-width="1.5" stroke-dasharray="3,3" stroke-opacity="0.5"/>
+
+  <!-- Cyber Telemetry Glyphs (Imhotep Djed stability & data streams) -->
+  <g opacity="0.3" stroke="#F59E0B" stroke-width="1.5" stroke-linecap="round">
+    <line x1="164" y1="412" x2="348" y2="412"/>
+    <circle cx="164" cy="412" r="2" fill="#F59E0B"/>
+    <circle cx="348" cy="412" r="2" fill="#F59E0B"/>
+    <circle cx="256" cy="412" r="2.5" fill="#22D3EE"/>
+  </g>
+</svg>
