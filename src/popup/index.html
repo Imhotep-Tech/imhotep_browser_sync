@@ -183,25 +183,25 @@
                 <span>Fingerprint:</span>
                 <span id="p2p-pairing-fingerprint" class="font-bold text-amber-700 dark:text-amber-400 tracking-wider">IMH-9X4-K28</span>
               </div>
-              <button id="btn-copy-ticket" class="btn-tactile mt-2 w-full py-1.5 px-3 rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-slate-850 text-[11px] font-mono font-semibold flex items-center justify-center space-x-1.5 shadow-sm transition-colors">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <button id="btn-copy-ticket" class="btn-tactile mt-2 w-full py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-600 dark:hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center space-x-1.5 shadow-md shadow-amber-500/20 transition-all">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                 </svg>
-                <span id="copy-ticket-label">Copy Pairing Ticket (P2P Ticket)</span>
+                <span id="copy-ticket-label">Copy Pairing Ticket (For Desktop / Helium)</span>
               </button>
             </div>
 
             <!-- 12-Word BIP-39 Mnemonic Phrase Grid -->
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <span class="text-[11px] font-semibold text-slate-800 dark:text-slate-300">12-Word Pairing Phrase:</span>
+                <span class="text-[11px] font-semibold text-slate-800 dark:text-slate-300">E2EE Recovery Passphrase:</span>
                 <button id="btn-copy-mnemonic" class="btn-tactile text-[10px] text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 flex items-center space-x-1 font-mono font-semibold">
                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                   </svg>
-                  <span id="copy-mnemonic-label">Copy All</span>
+                  <span id="copy-mnemonic-label">Copy Words</span>
                 </button>
               </div>
 
@@ -223,10 +223,13 @@
           <!-- Subtab 2: Connect to Peer -->
           <div id="p2p-subpanel-connect" class="p-3 space-y-3 hidden">
             <div>
-              <label class="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Enter Peer Mnemonic Phrase or Pairing Ticket:
+              <label class="block text-[11px] font-semibold text-slate-900 dark:text-slate-200 mb-1">
+                Paste Peer Pairing Ticket:
               </label>
-              <textarea id="input-peer-signal" rows="3" placeholder="e.g. apple banana cherry dog elephant fox grape hawk item jazz kitten lion&#10;or paste IMH1:... signal ticket" class="w-full text-xs font-mono p-2 rounded-lg bg-white dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-500"></textarea>
+              <textarea id="input-peer-signal" rows="3" placeholder="Paste IMH1:... ticket copied from the other browser&#10;(or click 'Scan Camera QR' on mobile)" class="w-full text-xs font-mono p-2 rounded-lg bg-white dark:bg-slate-950/80 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-amber-500"></textarea>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                💡 Tip: In Chrome, go to <strong>Share QR / Mnemonic</strong> and click <strong>Copy Pairing Ticket</strong>.
+              </p>
             </div>
 
             <div class="flex space-x-2">
