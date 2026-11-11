@@ -85,6 +85,12 @@ Before writing code, please review the domain boundaries:
 
 ---
 
-## 6. License
+## 6. AI Agent Contributions
+
+If you are an AI assistant or autonomous coding agent contributing to this repository, please review [AGENTS.md](AGENTS.md) for non-negotiable architectural invariants, data flow schemas, and step-by-step playbooks for adding new sync capabilities.
+
+---
+
+## 7. License
 
 By contributing to Imhotep Browser Sync, you agree that your contributions will be licensed under the [Apache License, Version 2.0](LICENSE).

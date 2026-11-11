@@ -178,6 +178,7 @@ To protect your privacy and guarantee clean sync states, the background service 
 imhotep_browser_sync/
 ├── LICENSE                 # Apache 2.0 Open Source License
 ├── README.md               # Project documentation, guides, and architecture
+├── AGENTS.md               # AI Agent operating manual & feature extension playbooks
 ├── SECURITY.md             # Security policy & WebRTC cryptographic specs
 ├── PRIVACY.md              # Zero-server privacy charter & data autonomy
 ├── CONTRIBUTING.md         # Open-source developer guide & conventions
@@ -205,6 +206,7 @@ imhotep_browser_sync/
 * **Security Policy**: See [SECURITY.md](SECURITY.md).
 * **Privacy Charter**: See [PRIVACY.md](PRIVACY.md).
 * **Developer Guidelines**: See [CONTRIBUTING.md](CONTRIBUTING.md).
+* **AI Agent Instructions**: See [AGENTS.md](AGENTS.md).
 
 ---
 
