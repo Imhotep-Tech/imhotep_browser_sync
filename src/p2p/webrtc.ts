@@ -165,8 +165,18 @@ export class WebRTCP2PClient {
       }
     };
 
-    channel.onerror = (ev) => {
-      this.handleError(new Error(`DataChannel error: ${ev}`));
+    channel.onerror = (ev: any) => {
+      // Ignore normal disconnect / tear-down events when closing
+      if (
+        this.state === 'closed' ||
+        this.state === 'disconnected' ||
+        channel.readyState === 'closing' ||
+        channel.readyState === 'closed'
+      ) {
+        return;
+      }
+      const errorMsg = ev?.error?.message || 'DataChannel notice';
+      console.warn('[WebRTC:DataChannel] Notice:', errorMsg);
     };
 
     channel.onmessage = async (event) => {
@@ -568,7 +578,7 @@ export class WebRTCP2PClient {
     if (this.options.onError) {
       this.options.onError(error);
     } else {
-      console.error('WebRTCP2PClient error:', error);
+      console.warn('[WebRTC] Notice:', error.message || error);
     }
   }
 

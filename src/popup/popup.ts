@@ -496,6 +496,9 @@ function getOrCreateP2PClient(): WebRTCP2PClient {
         }
         sendRuntimeMessage({ type: 'SET_REMOTE_EXTENSIONS', payload: mapped });
       },
+      onError: (err) => {
+        console.warn('[Popup:P2P] Notice:', err?.message || err);
+      },
     });
   }
   return popupP2PClient;
