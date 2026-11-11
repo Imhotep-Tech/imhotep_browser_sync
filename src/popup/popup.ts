@@ -835,19 +835,37 @@ function setupEventListeners() {
     }
   });
 
-  // Copy 12-Word Mnemonic Phrase
+  // Copy 12-Word Mnemonic / Ticket
   document.getElementById('btn-copy-mnemonic')?.addEventListener('click', async () => {
-    if (!state.currentMnemonic) return;
+    // Copy the pairing ticket so user can paste directly into other browser
+    const toCopy = state.currentTicket || state.currentMnemonic;
+    if (!toCopy) return;
     try {
-      await navigator.clipboard.writeText(state.currentMnemonic);
+      await navigator.clipboard.writeText(toCopy);
       const label = document.getElementById('copy-mnemonic-label');
       if (label) label.textContent = 'Copied!';
-      showToast('12-word phrase copied to clipboard');
+      showToast('Pairing code copied to clipboard!');
       setTimeout(() => {
-        if (label) label.textContent = 'Copy All';
+        if (label) label.textContent = 'Copy Words';
       }, 2000);
     } catch {
       showToast('Failed to copy');
+    }
+  });
+
+  // Paste from Clipboard helper
+  document.getElementById('btn-paste-clipboard')?.addEventListener('click', async () => {
+    const input = document.getElementById('input-peer-signal') as HTMLTextAreaElement;
+    try {
+      const text = (await navigator.clipboard.readText())?.trim();
+      if (text && input) {
+        input.value = text;
+        showToast('Pasted ticket from clipboard!');
+      } else {
+        showToast('Clipboard is empty');
+      }
+    } catch {
+      showToast('Please press Cmd+V to paste manually');
     }
   });
 
@@ -860,10 +878,21 @@ function setupEventListeners() {
   // Connect to Peer action (Handles both Offer Ticket & Answer Ticket)
   document.getElementById('btn-connect-peer')?.addEventListener('click', async () => {
     const input = document.getElementById('input-peer-signal') as HTMLTextAreaElement;
-    const value = input?.value?.trim();
+    let value = input?.value?.trim();
 
     if (!value) {
-      showToast('Please enter pairing ticket or mnemonic');
+      // If box is empty, try auto-reading clipboard!
+      try {
+        const clipText = (await navigator.clipboard.readText())?.trim();
+        if (clipText && (clipText.startsWith('IMH1:') || clipText.startsWith('IMH0:') || clipText.startsWith('{'))) {
+          value = clipText;
+          if (input) input.value = clipText;
+        }
+      } catch {}
+    }
+
+    if (!value) {
+      showToast('Please paste the Pairing Ticket copied from Chrome');
       return;
     }
 
@@ -873,13 +902,20 @@ function setupEventListeners() {
       if (value.startsWith('IMH1:') || value.startsWith('IMH0:') || value.startsWith('{')) {
         ticket = await decompressSignalTicket(value);
       } else {
-        const isValid = await validateMnemonic(value);
-        if (isValid) {
-          showToast('Pairing requires ticket string. Please copy Pairing Ticket from other browser.');
+        // User pasted 12 words: check if clipboard has the actual IMH1:... ticket
+        let clipText = '';
+        try {
+          clipText = (await navigator.clipboard.readText())?.trim() || '';
+        } catch {}
+
+        if (clipText && (clipText.startsWith('IMH1:') || clipText.startsWith('IMH0:') || clipText.startsWith('{'))) {
+          showToast('Found ticket in clipboard! Connecting...');
+          if (input) input.value = clipText;
+          ticket = await decompressSignalTicket(clipText);
+        } else {
+          showToast('Please click "Copy Pairing Ticket" in Chrome, then paste it here!');
           return;
         }
-        showToast('Invalid ticket payload. Make sure to copy the full ticket.');
-        return;
       }
 
       showToast(ticket.type === 'offer' ? 'Accepting offer & creating answer...' : 'Connecting to peer...');
