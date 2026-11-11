@@ -332,6 +332,11 @@ function switchTab(tab: PopupLocalState['activeTab']) {
     targetSection.classList.remove('hidden');
   }
 
+  // Ensure content is freshly rendered on tab switch
+  if (tab === 'extensions') renderExtensionsGallery();
+  if (tab === 'history') renderHistoryViewer();
+  if (tab === 'settings') renderSettings();
+
   // Reset scroll to top on tab change to prevent jumpiness
   const mainEl = document.querySelector('main');
   if (mainEl) {
