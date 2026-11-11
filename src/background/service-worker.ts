@@ -719,7 +719,7 @@ async function handleMessage(
       if (!email || !password) {
         return { success: false, error: 'Email and password required' };
       }
-      const { user, error } = await supabaseVault.signUp(email, password);
+      const { user, session, error } = await supabaseVault.signUp(email, password);
       if (error || !user) {
         return { success: false, error: error?.message || 'Sign up failed' };
       }
@@ -730,18 +730,28 @@ async function handleMessage(
       activeSaltBase64 = newSaltBase64;
       await chrome.storage.local.set({ [STORAGE_KEY_SALT]: newSaltBase64 });
 
-      try {
-        await supabaseVault.upsertProfile({
-          user_id: user.id,
-          salt: newSaltBase64,
-          device_count: 1,
-        });
-      } catch (err) {
-        console.error('[Imhotep:SW] Failed to persist profile salt:', err);
+      if (session) {
+        try {
+          await supabaseVault.upsertProfile({
+            user_id: user.id,
+            salt: newSaltBase64,
+            device_count: 1,
+          });
+        } catch (err) {
+          console.error('[Imhotep:SW] Failed to persist profile salt:', err);
+        }
+        await setupCloudRealtimeSync();
       }
 
-      await setupCloudRealtimeSync();
-      return { success: true, data: { user, salt: newSaltBase64 } };
+      return {
+        success: true,
+        data: {
+          user,
+          session,
+          salt: newSaltBase64,
+          requiresEmailConfirmation: !session,
+        },
+      };
     }
 
     case 'AUTH_SIGN_OUT': {
@@ -809,9 +819,18 @@ async function handleMessage(
     }
 
     case 'GET_RECENT_HISTORY': {
-      const limit = message.payload?.limit || 50;
-      const localVisits = await chrome.history.search({ text: '', maxResults: limit });
-      return { success: true, data: localVisits };
+      const limit = Math.min(message.payload?.limit || 150, 1000);
+      const query = message.payload?.query || '';
+      const localVisits = await chrome.history.search({ text: query, maxResults: limit });
+      const normalized = localVisits.map((item) => ({
+        id: item.id,
+        url: item.url || '',
+        title: item.title || item.url || 'Untitled',
+        visitTime: item.lastVisitTime || Date.now(),
+        deviceName: currentDeviceName || 'This Device (Local)',
+        deviceId: currentDeviceId,
+      }));
+      return { success: true, data: normalized };
     }
 
     case 'GET_INSTALLED_EXTENSIONS': {

@@ -12,8 +12,7 @@
     "unlimitedStorage"
   ],
   "host_permissions": [
-    "https://*/*",
-    "http://*/*"
+    "https://*.supabase.co/*"
   ],
   "background": {
     "service_worker": "service-worker.js",

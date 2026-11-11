@@ -39,6 +39,7 @@ interface PopupLocalState {
   recentHistory: HistoryVisitItem[];
   extensionSearchQuery: string;
   historySearchQuery: string;
+  historyLimit: number;
 }
 
 const DEFAULT_SYNC_STATE: SyncState = {
@@ -168,6 +169,7 @@ const state: PopupLocalState = {
   recentHistory: [...MOCK_RECENT_HISTORY],
   extensionSearchQuery: '',
   historySearchQuery: '',
+  historyLimit: 150,
 };
 
 // ============================================================================
@@ -275,11 +277,24 @@ function applyTheme(theme: 'dark' | 'light') {
   }
 }
 
-function formatRelativeTime(timestamp: number): string {
+function formatRelativeTime(rawTime: any): string {
+  if (!rawTime) return 'Just now';
+  let timestamp: number;
+  if (typeof rawTime === 'number') {
+    timestamp = rawTime;
+  } else if (typeof rawTime === 'string') {
+    const parsed = new Date(rawTime).getTime();
+    timestamp = isNaN(parsed) ? Number(rawTime) : parsed;
+  } else {
+    timestamp = Date.now();
+  }
+
+  if (isNaN(timestamp) || timestamp <= 0) return 'Just now';
+
   const now = Date.now();
   const diffSec = Math.floor((now - timestamp) / 1000);
 
-  if (diffSec < 60) return 'Just now';
+  if (diffSec < 0 || diffSec < 60) return 'Just now';
   if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
   if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
   return `${Math.floor(diffSec / 86400)}d ago`;
@@ -404,10 +419,10 @@ async function refreshPairingCredentials() {
       words.forEach((word, idx) => {
         const item = document.createElement('div');
         item.className =
-          'flex items-center space-x-1.5 bg-slate-900/90 p-1.5 rounded border border-slate-800/80 hover:border-amber-500/40 transition-colors';
+          'flex items-center space-x-1.5 bg-slate-900/90 px-2 py-1.5 rounded border border-slate-800/80 hover:border-amber-500/40 transition-colors';
         item.innerHTML = `
-          <span class="mnemonic-badge text-[9px] text-amber-500/70 w-3 font-semibold">${idx + 1}</span>
-          <span class="text-slate-200 font-medium truncate">${word}</span>
+          <span class="mnemonic-badge text-[9px] text-amber-500/80 font-mono font-semibold">${idx + 1}.</span>
+          <span class="text-slate-200 font-mono text-[11px] font-medium tracking-tight select-all">${word}</span>
         `;
         mnemonicGrid.appendChild(item);
       });
@@ -617,18 +632,18 @@ function renderExtensionsGallery() {
         </div>
 
         <!-- Badges & 1-Click Install Button -->
-        <div>
+        <div class="flex-shrink-0">
           ${
             ext.isRemote
-              ? `<a href="${ext.storeUrl}" target="_blank" rel="noopener noreferrer" class="btn-tactile inline-flex items-center space-x-1 px-2.5 py-1 rounded-md bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-[10px] shadow-md shadow-amber-500/20">
-                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              ? `<a href="${ext.storeUrl}" target="_blank" rel="noopener noreferrer" class="btn-tactile inline-flex items-center space-x-1.5 px-3 py-1 rounded-md bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-[10px] shadow-md shadow-amber-500/20 whitespace-nowrap">
+                  <svg class="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                     <polyline points="7 10 12 15 17 10"/>
                     <line x1="12" y1="15" x2="12" y2="3"/>
                   </svg>
                   <span>1-Click Install</span>
                 </a>`
-              : `<span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-mono ${
+              : `<span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-mono whitespace-nowrap ${
                   ext.enabled
                     ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60'
                     : 'bg-slate-800 text-slate-400'
@@ -660,7 +675,10 @@ function renderHistoryViewer() {
   if (!container) return;
 
   if (tabBadge) {
-    tabBadge.textContent = state.recentHistory.length.toString();
+    tabBadge.textContent =
+      state.recentHistory.length >= state.historyLimit
+        ? `${state.recentHistory.length}+`
+        : state.recentHistory.length.toString();
     tabBadge.classList.remove('hidden');
   }
 
@@ -690,8 +708,9 @@ function renderHistoryViewer() {
       'glass-panel p-2.5 rounded-xl border border-slate-800/80 hover:border-slate-700 transition-all space-y-1.5';
 
     const domain = formatDomain(item.url);
-    const timeAgo = formatRelativeTime(item.visitTime);
-    const deviceName = item.deviceName || 'Unknown Device';
+    const rawTime = (item as any).visitTime || (item as any).lastVisitTime || (item as any).visit_timestamp;
+    const timeAgo = formatRelativeTime(rawTime);
+    const deviceName = item.deviceName || (item as any).device_name || 'This Device (Local)';
 
     card.innerHTML = `
       <div class="flex items-start justify-between space-x-2">
@@ -720,19 +739,51 @@ function renderHistoryViewer() {
   });
 }
 
+async function loadHistory(limit: number = state.historyLimit, query: string = state.historySearchQuery) {
+  state.historyLimit = limit;
+  try {
+    const histRes = await sendRuntimeMessage<HistoryVisitItem[]>({
+      type: 'GET_RECENT_HISTORY',
+      payload: { limit, query },
+    });
+    if (histRes.success && Array.isArray(histRes.data)) {
+      state.recentHistory = histRes.data;
+      renderHistoryViewer();
+    }
+  } catch (err) {
+    console.warn('Failed to load history:', err);
+  }
+}
+
 // ============================================================================
 // Settings & Diagnostics Logic
 // ============================================================================
 
-function renderSettings() {
+async function renderSettings() {
   const nameInput = document.getElementById('input-device-name') as HTMLInputElement;
   const idLabel = document.getElementById('label-device-id');
+  const urlInput = document.getElementById('input-cloud-url') as HTMLInputElement;
+  const keyInput = document.getElementById('input-cloud-key') as HTMLInputElement;
 
   if (nameInput) {
     nameInput.value = state.syncState.deviceName;
   }
   if (idLabel) {
     idLabel.textContent = state.syncState.deviceId;
+  }
+
+  try {
+    const res = await sendRuntimeMessage({ type: 'GET_CLOUD_CONFIG' });
+    if (res.success && res.data) {
+      if (urlInput && res.data.supabaseUrl && !res.data.supabaseUrl.includes('your-project')) {
+        urlInput.value = res.data.supabaseUrl;
+      }
+      if (keyInput && res.data.supabaseAnonKey && !res.data.supabaseAnonKey.includes('placeholder')) {
+        keyInput.value = res.data.supabaseAnonKey;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load cloud config in settings:', e);
   }
 }
 
@@ -910,12 +961,18 @@ function setupEventListeners() {
     });
 
     if (res.success) {
-      state.syncState.isCloudAuthenticated = true;
-      state.syncState.userEmail = email;
-      state.syncState.mode = 'cloud';
-      renderCloudVaultUI();
-      updateHeaderStatusBadge();
-      showToast('Vault authenticated successfully');
+      if ((res.data as any)?.requiresEmailConfirmation) {
+        showToast('Vault account created! Please verify via confirmation email.');
+        state.authSubtab = 'signin';
+        authSignInBtn?.click();
+      } else {
+        state.syncState.isCloudAuthenticated = true;
+        state.syncState.userEmail = email;
+        state.syncState.mode = 'cloud';
+        renderCloudVaultUI();
+        updateHeaderStatusBadge();
+        showToast('Vault authenticated successfully!');
+      }
     } else {
       showToast(res.error || 'Authentication error');
     }
@@ -1000,20 +1057,43 @@ function setupEventListeners() {
   });
 
   // Search history
+  let searchDebounceTimer: any = null;
   const histSearch = document.getElementById('input-search-history') as HTMLInputElement;
   histSearch?.addEventListener('input', (e) => {
     state.historySearchQuery = (e.target as HTMLInputElement).value;
-    renderHistoryViewer();
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      loadHistory(state.historyLimit, state.historySearchQuery);
+    }, 250);
   });
 
   // Sync history button
   document.getElementById('btn-sync-history')?.addEventListener('click', async () => {
-    showToast('Fetching latest synced visits...');
-    const res = await sendRuntimeMessage({ type: 'TRIGGER_FLUSH' });
-    if (res.success) {
-      renderHistoryViewer();
-      showToast('History updated!');
-    }
+    showToast('Refreshing synced visits...');
+    await sendRuntimeMessage({ type: 'TRIGGER_FLUSH' });
+    await loadHistory(state.historyLimit, state.historySearchQuery);
+    showToast('History updated!');
+  });
+
+  // History Limit selector buttons
+  document.querySelectorAll('.hist-limit-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetLimit = Number((btn as HTMLElement).dataset.limit) || 150;
+      document.querySelectorAll('.hist-limit-btn').forEach((b) => {
+        b.className =
+          'hist-limit-btn px-2 py-0.5 rounded border border-slate-800 hover:border-cyan-500/40 text-slate-400';
+      });
+      btn.className =
+        'hist-limit-btn px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold';
+      loadHistory(targetLimit, state.historySearchQuery);
+    });
+  });
+
+  // Load More History button
+  document.getElementById('btn-load-more-history')?.addEventListener('click', () => {
+    const nextLimit = Math.min(state.historyLimit + 150, 1000);
+    showToast(`Loading up to ${nextLimit} visits...`);
+    loadHistory(nextLimit, state.historySearchQuery);
   });
 
   // Save device name
@@ -1038,6 +1118,37 @@ function setupEventListeners() {
       showToast('Device ID copied');
     } catch {
       showToast('Failed to copy ID');
+    }
+  });
+
+  // Save Cloud Endpoint Config
+  document.getElementById('btn-save-cloud-config')?.addEventListener('click', async () => {
+    const urlInput = document.getElementById('input-cloud-url') as HTMLInputElement;
+    const keyInput = document.getElementById('input-cloud-key') as HTMLInputElement;
+    const url = urlInput?.value?.trim();
+    const key = keyInput?.value?.trim();
+
+    if (!url || !key) {
+      showToast('Please enter both Supabase URL and Anon Key');
+      return;
+    }
+
+    const res = await sendRuntimeMessage({
+      type: 'SET_CLOUD_CONFIG',
+      payload: { supabaseUrl: url, supabaseAnonKey: key },
+    });
+
+    if (res.success) {
+      showToast('Cloud Vault endpoint saved!');
+      const badge = document.getElementById('badge-cloud-status');
+      const text = document.getElementById('text-cloud-status');
+      if (badge && text) {
+        badge.className =
+          'px-2 py-0.5 rounded text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center space-x-1';
+        text.textContent = 'Endpoint Active';
+      }
+    } else {
+      showToast(res.error || 'Failed to save cloud config');
     }
   });
 
@@ -1082,7 +1193,10 @@ async function init() {
       state.remoteExtensions = remoteExtRes.data;
     }
 
-    const histRes = await sendRuntimeMessage<HistoryVisitItem[]>({ type: 'GET_RECENT_HISTORY' });
+    const histRes = await sendRuntimeMessage<HistoryVisitItem[]>({
+      type: 'GET_RECENT_HISTORY',
+      payload: { limit: state.historyLimit },
+    });
     if (histRes.success && histRes.data) {
       state.recentHistory = histRes.data;
     }

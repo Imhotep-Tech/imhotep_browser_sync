@@ -161,24 +161,26 @@
       <!-- ===================================================================== -->
       <section id="view-p2p" class="view-panel space-y-3">
         <!-- P2P Live Telemetry Card -->
-        <div class="glass-panel p-3 rounded-xl border border-slate-800 flex items-center justify-between">
-          <div>
+        <div class="glass-panel p-3 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+          <div class="min-w-0 flex-1">
             <div class="text-[10px] uppercase font-mono text-slate-400">P2P Network Status</div>
             <div class="flex items-center space-x-2 mt-0.5">
-              <span id="p2p-connection-indicator" class="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span id="p2p-connection-text" class="text-xs font-bold text-slate-100">Direct P2P Ready</span>
+              <span id="p2p-connection-indicator" class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span>
+              <span id="p2p-connection-text" class="text-xs font-bold text-slate-100 truncate">Direct P2P Ready</span>
             </div>
           </div>
-          <div class="text-right">
-            <div class="text-[10px] uppercase font-mono text-slate-400">Connected Peers</div>
-            <div id="p2p-peer-count" class="text-xs font-mono font-bold text-amber-400">0 Peers</div>
+          <div class="flex items-center space-x-2.5 flex-shrink-0">
+            <div class="text-right">
+              <div class="text-[9px] uppercase font-mono text-slate-400">Peers</div>
+              <div id="p2p-peer-count" class="text-xs font-mono font-bold text-amber-400">0 Online</div>
+            </div>
+            <button id="btn-p2p-sync-now" class="btn-tactile px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center space-x-1.5 shadow-md shadow-amber-500/20 whitespace-nowrap">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+              </svg>
+              <span>Sync Now</span>
+            </button>
           </div>
-          <button id="btn-p2p-sync-now" class="btn-tactile px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center space-x-1 shadow-lg shadow-amber-500/20">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-            </svg>
-            <span>Sync Now</span>
-          </button>
         </div>
 
         <!-- Pairing Mode Segment (Share QR / Code vs Connect to Peer) -->
@@ -219,7 +221,7 @@
                 </button>
               </div>
 
-              <div id="mnemonic-grid" class="grid grid-cols-3 gap-1.5 p-2 bg-slate-950/60 rounded-lg border border-slate-800 text-[10px] font-mono">
+              <div id="mnemonic-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 text-[10px] font-mono">
                 <!-- Dynamically populated 12 words -->
               </div>
             </div>
@@ -407,7 +409,7 @@
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </div>
-          <button id="btn-sync-extensions" title="Sync Extensions Now" class="btn-tactile p-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">
+          <button id="btn-sync-extensions" title="Sync Extensions Now" class="btn-tactile p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-amber-500/50 text-slate-400 hover:text-amber-400 transition-colors">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
             </svg>
@@ -446,7 +448,7 @@
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </div>
-          <button id="btn-sync-history" title="Sync History Now" class="btn-tactile p-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold">
+          <button id="btn-sync-history" title="Sync History Now" class="btn-tactile p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-slate-400 hover:text-cyan-400 transition-colors">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="23 4 23 10 17 10"/>
               <polyline points="1 20 1 14 7 14"/>
@@ -455,11 +457,31 @@
           </button>
         </div>
 
+        <!-- Limit selector & counter bar -->
+        <div class="flex items-center justify-between text-[10px] text-slate-400 font-mono px-0.5">
+          <span>Items Limit:</span>
+          <div class="flex items-center space-x-1">
+            <button class="hist-limit-btn px-2 py-0.5 rounded border border-slate-800 hover:border-cyan-500/40 text-slate-400" data-limit="50">50</button>
+            <button class="hist-limit-btn px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 font-bold" data-limit="150">150</button>
+            <button class="hist-limit-btn px-2 py-0.5 rounded border border-slate-800 hover:border-cyan-500/40 text-slate-400" data-limit="300">300</button>
+            <button class="hist-limit-btn px-2 py-0.5 rounded border border-slate-800 hover:border-cyan-500/40 text-slate-400" data-limit="500">500</button>
+          </div>
+        </div>
+
         <!-- History Items Feed -->
         <div id="history-items-list" class="space-y-2">
           <!-- Populated dynamically via JS -->
         </div>
-      </section>
+
+        <!-- Load More Button -->
+        <div class="text-center pt-1 pb-2">
+          <button id="btn-load-more-history" class="btn-tactile w-full py-2 rounded-lg bg-slate-900/90 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/50 text-cyan-400 text-xs font-medium flex items-center justify-center space-x-1.5 transition-colors">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 13l5 5 5-5M7 6l5 5 5-5"/>
+            </svg>
+            <span id="load-more-label">Load More Visits</span>
+          </button>
+        </div>
 
       <!-- ===================================================================== -->
       <!-- VIEW 5: SETTINGS & DIAGNOSTICS -->
@@ -490,6 +512,30 @@
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Cloud Vault Backend Endpoint Status Card -->
+        <div class="glass-panel p-3.5 rounded-xl border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-200">Cloud Vault Endpoint</h3>
+            <span id="badge-cloud-status" class="px-2 py-0.5 rounded text-[9px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center space-x-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+              <span id="text-cloud-status">Configured via Storage</span>
+            </span>
+          </div>
+          <div class="space-y-2 text-[10px] font-mono">
+            <div>
+              <label class="block text-slate-400 mb-1">Supabase URL</label>
+              <input type="text" id="input-cloud-url" placeholder="https://your-project.supabase.co" class="w-full text-xs p-1.5 rounded bg-slate-950/80 border border-slate-800 text-slate-100 font-mono focus:outline-none focus:border-cyan-400">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">Supabase Anon Key</label>
+              <input type="password" id="input-cloud-key" placeholder="eyJhbGciOi..." class="w-full text-xs p-1.5 rounded bg-slate-950/80 border border-slate-800 text-slate-100 font-mono focus:outline-none focus:border-cyan-400">
+            </div>
+            <button id="btn-save-cloud-config" class="btn-tactile w-full py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs">
+              Save Cloud Endpoint
+            </button>
           </div>
         </div>
 

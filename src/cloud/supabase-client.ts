@@ -26,10 +26,9 @@ import {
   ExtensionSyncRecord,
 } from '../types/sync';
 
-// Default configuration (can be overridden via extension options/storage)
-export const DEFAULT_SUPABASE_URL = 'https://imhotep-vault.supabase.co';
-export const DEFAULT_SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.dummy-anon-key-placeholder';
+// Default configuration (can be configured via extension options/storage)
+export const DEFAULT_SUPABASE_URL = 'https://your-project.supabase.co';
+export const DEFAULT_SUPABASE_ANON_KEY = 'your-anon-key-placeholder';
 
 const STORAGE_KEY_CONFIG = 'imhotep_cloud_config';
 
